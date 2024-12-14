@@ -35,7 +35,7 @@ Login with ssh to your kioskdisplay with user *pi*
 #### Step 2:
 Clone this project with: 
 ```
-git clone xxx
+git clone https://github.com/olialb/mqttDisplayClient
 ``` 
 and go inside the project directory: 
 ```
@@ -50,7 +50,7 @@ Details of the configuration you can find in next section: [Configuraion](#confi
 #### Step 4:
 Call setup: 
 ```
-sh setup.sh
+bash setup.sh
 ```
 
 This installs the required python packages and configures a systemd service which is atomatically running the mqtt client after startup. The systemd service is started with the current user rights.
