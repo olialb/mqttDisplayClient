@@ -18,24 +18,26 @@ echo "#########################################"
 python3 -m venv venv
 source venv/bin/activate
 
-echo "#########################################"
+echo "#####################################################################"
 echo "Install required libs"
-echo "#########################################"
+echo "You can remove this section if you don't need the pyautogui feature"
+echo "#####################################################################"
+sudo apt-get update
 sudo apt-get install -y build-essential libsqlite3-dev   libpng-dev libjpeg-dev
+sudo apt-get install -y  python3-tk python3-dev
+python -m pip install --upgrade pip
+python -m pip install --upgrade Pillow
+pip install pyautogui
 
 echo "#########################################"
 echo "Install the required python packages..."
 echo "#########################################"
 echo ""
-python -m pip install --upgrade Pillow
-pip install pyautogui
 pip install gpiozero
 pip install rpi.gpio
 pip install rpi.lgpio
 pip install validators
 pip install paho-mqtt
-pip install python3-tk 
-pip install python3-dev
 
 echo "#########################################"
 echo "Fill things template"
@@ -49,7 +51,7 @@ echo "service name: mqttDisplayClient"
 eval "echo \"user        : $USER\""
 echo "################################################"
 echo ""
-chmod +x mqttDisplayClient
+#chmod +x mqttDisplayClient
 eval "echo \"$(cat mqttDisplayClient.service.template)\"" >mqttDisplayClient.service
 sudo mv mqttDisplayClient.service /lib/systemd/system/mqttDisplayClient.service
 sudo chmod 644 /lib/systemd/system/mqttDisplayClient.service
@@ -64,4 +66,4 @@ echo ""
 echo "Start the service with:"
 echo "sudo systemctl start mqttDisplayClient"
 echo "################################################"
-
+trap - 0
