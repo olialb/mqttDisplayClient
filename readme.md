@@ -46,7 +46,7 @@ Configure the ini file for your personal needs:
 ```
 nano mqttDisplayClient.ini 
 ```
-Details of the configuration you can find in next section: [Configuraion](#configuration)
+Details of the configuration you can find in next section: [Configuration](#configuration)
 #### Step 4:
 Call setup: 
 ```
@@ -61,12 +61,14 @@ If you have issues with your configuration and the service is not running as exp
 ```bash
 sudo systemctl stop mqttDisplayClient
 ```
-Adapt the ini file in section [[logging]](#section-logging) and enable *DEBUG* logging level. Than start the service by hand:
+Adapt the ini file in section [[logging]](#section-logging) and enable *DEBUG* logging level. Than activate the virtual python environment and start the service by hand:
 ```bash
+source venv/bin/activate
 python mqttDisplayClient.py
 ```
-Check the logging output. After everything is fixed, set the logging level back to *ERROR* and start the systemd service again with:
+Check the logging output. After everything is fixed, set the logging level back to *ERROR*, deactivate the virtual environment and start the systemd service again with:
 ```bash
+deactivate
 sudo systemctl start mqttDisplayClient
 ```
 
