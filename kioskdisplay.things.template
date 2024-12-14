@@ -1,0 +1,20 @@
+    //Kiosk display mqtt client configuration
+    Thing topic {name} "{name}" {{
+        Channels:
+            Type dimmer  : brightness  "display brightness"   [ stateTopic="{baseTopic}/{name}/brightness_percent", commandTopic="{baseTopic}/{name}/brightness_percent/set"]
+            Type switch  : backlight   "backlight"            [ stateTopic="{baseTopic}/{name}/backlight", commandTopic="{baseTopic}/{name}/backlight/set" ]   
+            Type switch  : blank       "Blank page"           [ stateTopic="{baseTopic}/{name}/blank_page", commandTopic="{baseTopic}/{name}/blank_page/set" ]   
+            Type string  : url         "url"                  [ stateTopic="{baseTopic}/{name}/url", commandTopic="{baseTopic}/{name}/url/set" ]
+            Type string  : panel       "panel"                [ stateTopic="{baseTopic}/{name}/panel", commandTopic="{baseTopic}/{name}/panel/set" ]
+            Type number  : cpu_temperature "CPU temperatur"   [ stateTopic="{baseTopic}/{name}/system", transformationPattern="JSONPATH:$.cpu_temp" ]
+            Type number  : cpu_load    "CPU load"             [ stateTopic="{baseTopic}/{name}/system", transformationPattern="JSONPATH:$.cpu_load" ]
+            Type number  : disk_usage  "Disk usage"           [ stateTopic="{baseTopic}/{name}/system", transformationPattern="JSONPATH:$.disk_usage" ]
+            Type string  : default_url "Default URL"          [ stateTopic="{baseTopic}/{name}/system", transformationPattern="JSONPATH:$.default_url" ]
+			
+			//pyautogui channels:
+            Type string  : autogui     "autogui"              [ stateTopic="{baseTopic}/{name}/autogui", commandTopic="{baseTopic}/{name}/autogui/set" ]
+            Type number  : mouse_x     "Mouse X"              [ stateTopic="{baseTopic}/{name}/system", transformationPattern="JSONPATH:$.mouse_position[0]" ]
+            Type string  : mouse_y     "Mouse Y"              [ stateTopic="{baseTopic}/{name}/system", transformationPattern="JSONPATH:$.mouse_position[1]" ]
+            Type number  : display_width "Display witdth"     [ stateTopic="{baseTopic}/{name}/system", transformationPattern="JSONPATH:$.display_size[0]" ]
+            Type string  : display_hight  "Mouse hight"       [ stateTopic="{baseTopic}/{name}/system", transformationPattern="JSONPATH:$.display_size[1]" ]
+    }}

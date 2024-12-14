@@ -1,0 +1,15 @@
+[Unit]
+Description=mqttDisplayClient
+After=network.target
+
+[Service]
+Type=idle
+Restart=on-failure
+User=$USER
+Environment=PYTHONPATH=/home/$USER/mqttDisplayClient
+WorkingDirectory=/home/$USER/mqttDisplayClient
+ExecStart=/home/$USER/mqttDisplayClient/venv/bin/python mqttDisplayClient.py
+#ExecStart=bash -c 'cd/home/$USER/mqttDisplayClient && ./mqttDisplayClient'
+
+[Install]
+WantedBy=multi-user.target
