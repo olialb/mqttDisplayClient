@@ -42,16 +42,21 @@ and go inside the project directory:
 cd mqttDisplayClient
 ```
 #### Step 3:
+Call setup: 
+```
+bash setup.sh
+```
+As an alternative you can add optional features during with the setup.sh call:
+```
+bash setup.sh -f pyautogui
+```
+
+#### Step 4:
 Configure the ini file for your personal needs: 
 ```
 nano mqttDisplayClient.ini 
 ```
 Details of the configuration you can find in next section: [Configuration](#configuration)
-#### Step 4:
-Call setup: 
-```
-bash setup.sh
-```
 
 This installs the required python packages and configures a systemd service which is atomatically running the mqtt client after startup. The systemd service is started with the current user rights.
 
