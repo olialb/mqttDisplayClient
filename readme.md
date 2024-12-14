@@ -50,6 +50,7 @@ As an alternative you can add optional features during with the setup.sh call:
 ```
 bash setup.sh -f pyautogui
 ```
+This installs the required python packages and configures a systemd service which is atomatically running the mqtt client after startup. The systemd service is started with the current user rights.
 
 #### Step 4:
 Configure the ini file for your personal needs: 
@@ -58,7 +59,6 @@ nano mqttDisplayClient.ini
 ```
 Details of the configuration you can find in next section: [Configuration](#configuration)
 
-This installs the required python packages and configures a systemd service which is atomatically running the mqtt client after startup. The systemd service is started with the current user rights.
 
 #### In case of problems:
 
