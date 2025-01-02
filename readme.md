@@ -192,10 +192,17 @@ Ower the command topic  `kioskdisplay/DEVICE_NETWORK_NAME/system/set` it is poss
 
 ### url (string)
 The url topic `kioskdisplay/DEVICE_NETWORK_NAME/url` exposes the url of the website which is currently shown in the display.
-With the command topic `kioskdisplay/DEVICE_NETWORK_NAME/url/set` can the url be changed. The payload can have the following content:
+With the command topic `kioskdisplay/DEVICE_NETWORK_NAME/url/set` can an individual URL set. To show this URL you must set panel command topic to **URL** (see next section):
 
-* `DEFAULT`: Set the website back to the [FullPageOS](https://github.com/guysoft/FullPageOS) default page
-* `SC:`*keyword*: Set the website to the URL which is configured for this keyword in the ini file section [[websites]](#section-websites).
+* *url*: Any valid full qualified url including `http://` or `https://`. If the URL is not fully qualified the command is ignored. For pages in your local network use the ip address or mypage.local as address!
+
+### panel (string)
+The panel topic `kioskdisplay/DEVICE_NETWORK_NAME/panel` exposes the url of the website which is currently shown in the display.
+With the command topic `kioskdisplay/DEVICE_NETWORK_NAME/panel/set` can the url be changed. The payload can have the following content:
+
+* `DEFAULT`: Set the panel back to the [FullPageOS](https://github.com/guysoft/FullPageOS) default page
+* `URL`: Set the url in the display which was set over the url command topic (previous section).
+* *keyword*: Set the website to the URL which is configured for this keyword in the ini file section [[panels]](#section-panels).
 * *url*: Any valid full qualified url including `http://` or `https://`. If the URL is not fully qualified the command is ignored. For pages in your local network use the ip address or mypage.local as address!
 
 ## Feature *pyautogui*
