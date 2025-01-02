@@ -202,8 +202,7 @@ With the command topic `kioskdisplay/DEVICE_NETWORK_NAME/panel/set` can the url 
 
 * `DEFAULT`: Set the panel back to the [FullPageOS](https://github.com/guysoft/FullPageOS) default page
 * `URL`: Set the url in the display which was set over the url command topic (previous section).
-* *keyword*: Set the website to the URL which is configured for this keyword in the ini file section [[panels]](#section-panels).
-* *url*: Any valid full qualified url including `http://` or `https://`. If the URL is not fully qualified the command is ignored. For pages in your local network use the ip address or mypage.local as address!
+* *panelName*: Set the website to the URL which is configured for this *panelName* in the ini file section [[panels]](#section-panels).
 
 ## Feature *pyautogui*
 The *autogui* feature allows the control of the website which is shown in the dsiplay over mouse and keyboard commmands. 
