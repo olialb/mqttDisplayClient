@@ -104,12 +104,12 @@ This is the main configuration section. This is the only section where you need 
 * *fullPublishCycle*= Publish cycle even if topic content is not changed. Cycle is *fullPublishCycle* multiplied with *publishCycle* in seconds
 * *defaultUrl*= Path to FullPageOS config file for default URL after startup
 
-#### Section **[logging]
+#### Section **[logging]**
 Configuration of the python logger which is used to log events
 
 * *level*= configuration of the logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL)
   
-#### Section **[feature]
+#### Section **[feature]**
 Section to enable and diable additional features
 
 * *pyautogui*= enables or disables autogui feature to control the GUI remotly (possible values: *enabled* or *disabled*)
