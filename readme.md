@@ -1,15 +1,15 @@
 # FullPageOS MQTT client
 
 ## Purpose of this project
-[FullPageOS](https://github.com/guysoft/FullPageOS) is a Raspberry PI OS to support Touchdisplays in Fullscreen mode for kiosk applications to control your smart home.
-This MQTT client is extending the Kioskdisplay with an MQTT client which allows to control the Display from remote. That means your smart home system can change:
+[FullPageOS](https://github.com/guysoft/FullPageOS) is a Raspberry PI OS to support touch displays in full screen mode for kiosk applications to control your smart home.
+This MQTT client is extending the [FullPageOS](https://github.com/guysoft/FullPageOS) with a MQTT client to allows the control of the Display from remote. That means your smart home system can set:
 
 * The brighness and backlight status of the Kioskdisplay
 * Set and change panel content with remote commands
 * Reboot and Shutown the Kioskdisplay
 * Read status like CPU temparature, CPU load,....
 
-The configuration is done over an ini file and allows to adapt the commands to our needs. As default it is configured for an official Raspberry PI 7 inch Touch Display 2. How to setup this display with [FullPageOS](https://github.com/guysoft/FullPageOS) you can read here: [Installation and config of FullPageOS](https://albold-home.de/part-1-installation-and-config-of-fullpage-os/)
+The configuration is done over an ini file and allows you to adapt the commands to your needs. As default it is configured for an official Raspberry PI 7 inch Touch Display 2. How to setup this display with [FullPageOS](https://github.com/guysoft/FullPageOS) you can read here: [Installation and config of FullPageOS](https://albold-home.de/part-1-installation-and-config-of-fullpage-os/)
 
 ## Implementation notes
 
@@ -23,7 +23,7 @@ The implementaion is using the folling python libraries, which need to be instal
 Optional to control the mouse and send keyboard commands:
 * [pyautogui](https://pyautogui.readthedocs.io/en/latest/) Needs also [Pillow](https://github.com/python-pillow/Pillow)
 
-This libraries are installed with the `setup.sh` shell script, which is part of this project. See next section [Installation](#installation)
+All this libraries are installed with the `setup.sh` shell script, which is part of this project. See next section [Installation](#installation)
 
 All the other used python libraries are standard in latest Raspbery PI OS and should be available without installation.
  
@@ -48,7 +48,7 @@ bash setup.sh
 ```
 As an alternative you can add optional features during with the setup.sh call:
 ```
-bash setup.sh -f pyautogui
+bash setup.sh -f pyautogui -f backlight
 ```
 This installs the required python packages and configures a systemd service which is atomatically running the mqtt client after startup. The systemd service is started with the current user rights.
 
@@ -113,6 +113,7 @@ Configuration of the python logger which is used to log events
 Section to enable and diable additional features
 
 * *pyautogui*= enables or disables autogui feature to control the GUI remotly (possible values: *enabled* or *disabled*)
+* *backlight*= enables or disables feature to control brightness and backlight ON/OFF state remotly (possible values: *enabled* or *disabled*). Default configuraion in the ini file is for Raspberry PI Touch Panel 2.
   
 #### Section **[brightness]**
 This section configure the shell commands which are needed to read and set the display brightness. By default the section is configured for an original raspberry pi 7 inch touch display 2. Even if you use this display you may need to adapt the display ID in the commands. You can find your local ID with:

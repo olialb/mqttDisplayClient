@@ -1,3 +1,19 @@
+# 
+# This file is part of the mqttDisplayClient distribution (https://github.com/olialb/mqttDisplayClient).
+# Copyright (c) 2025 Oliver Albold.
+# 
+# This program is free software: you can redistribute it and/or modify  
+# it under the terms of the GNU General Public License as published by  
+# the Free Software Foundation, version 3.
+#
+# This program is distributed in the hope that it will be useful, but 
+# WITHOUT ANY WARRANTY; without even the implied warranty of 
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License 
+# along with this program. If not, see <http://www.gnu.org/licenses/>.
+#
 [global]
 #set server ip adress and port
 broker=openhab.local
@@ -8,9 +24,9 @@ password=
 #change display ID "10-0045" to the value which you see in your system: ls /sys/class/backlight:
 displayID=10-0045
 #set root of topic path:
-topicRoot=kioskdisplay
+topicRoot=kiosk/01
 #device name
-deviceName=kioskdisplay01
+deviceName=display
 #delay in seconds to try reconnect to server, if connection is lost:
 reconnectDelay=5
 #cycle time in seconds to publish changes in topics:
@@ -27,6 +43,9 @@ level=WARNING
 [feature]
 #enable display control with pyautogui. Allowed values (enabled/disabled)
 pyautogui=$pyautogui
+#feature backlight alows you to control the brigtness off directly connected original raspberry pi displays like "Touch Display 2"
+#Disable this feature if you are not sure if your display support this feature! This avoids errors during startup. 
+backlight=$backlight
 
 [brightness]
 min=0
@@ -55,4 +74,3 @@ habPanelRoot=http://openhab.local:8080/habpanel/index.html#/
 #Format: keyword=shell command
 shutdown=sudo shutdown now
 reboot=sudo reboot
-

@@ -1,4 +1,20 @@
 #python
+# 
+ # This file is part of the mqttDisplayClient distribution (https://github.com/olialb/mqttDisplayClient).
+ # Copyright (c) 2025 Oliver Albold.
+ # 
+ # This program is free software: you can redistribute it and/or modify  
+ # it under the terms of the GNU General Public License as published by  
+ # the Free Software Foundation, version 3.
+ #
+ # This program is distributed in the hope that it will be useful, but 
+ # WITHOUT ANY WARRANTY; without even the implied warranty of 
+ # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ # General Public License for more details.
+ #
+ # You should have received a copy of the GNU General Public License 
+ # along with this program. If not, see <http://www.gnu.org/licenses/>.
+ #
 
 import configparser
 import logging
@@ -46,20 +62,29 @@ try:
     logLevel = _featureCfg_['logging']['level']
     log.setLevel (logLevel)
 
-    _pyautogui_ = _featureCfg_['feature']['pyautogui']
+    #read features status
+    _backlight_ = False
+    if 'backlight' in _featureCfg_['feature']:
+         if _featureCfg_['feature']['backlight'].upper() == 'ENABLED':
+            _backlight_ = True
+
+    _pyautogui_ = False    
+    if 'pyautogui' in _featureCfg_['feature']:
+        if _featureCfg_['feature']['pyautogui'].upper() == 'ENABLED':
+            _pyautogui_ = True
+                
 except Exception as inst:
     log.error(f"Error while reading ini file: {inst}")
     exit()
 
 #import the functions zo control the display with autogui 
-if _pyautogui_.upper() == 'ENABLED': 
+if _pyautogui_: 
     os.environ['DISPLAY'] = ':0' #environment variable needed for pyautogui
     import pyautogui
     #local imports:
     from autoguiCommands import call_autogui_cmd_list, autogui_log_level
     #set loglevel of autogui
     autogui_log_level( logLevel )
-    _pyautogui_ = True
 
 #
 #global settings
@@ -294,6 +319,10 @@ class MqttDisplayClient:
 
 
     def set_brightness( self, myConfig, msg ):
+        if _backlight_ == False:
+            #feature is switched off
+            log.warning(f"Error brightness command received but backlight feature is not enabled!")
+            return
         #Synax OK we can call the command to set the brightness
         msg = msg.strip()
         min = myConfig['min']
@@ -313,6 +342,10 @@ class MqttDisplayClient:
             log.error(f"Error {err} executing command: {msg}")
 
     def set_backlight( self, myConfig, msg ):
+        if _backlight_ == False:
+            #feature is switched off
+            log.warning(f"Error backlight command received but feature is not enabled!")
+            return
         #Synax OK we can call the command to set the backlight status
         msg = msg.strip()
         if msg.upper() == 'ON' or msg.upper() == 'OFF':
@@ -469,6 +502,9 @@ class MqttDisplayClient:
             log.error(f"Failed to send message to topic {topic}")
 
     def publish_brightness(self, topic, myConfig):
+        if _backlight_ == False:
+            #feature is switched off
+            return
         #call command to read the brightness
         err, msg = subprocess.getstatusoutput( myConfig['get'].format(displayID=self.displayID) )
         if not err:
@@ -489,6 +525,9 @@ class MqttDisplayClient:
             log.error(f"Error reading display brightness: {err}")
 
     def publish_backlight(self, topic, myConfig):
+        if _backlight_ == False:
+            #feature is switched off
+            return
         #call command to read the backlight state
         err, msg = subprocess.getstatusoutput( myConfig['get'].format(displayID=self.displayID) )
         if not err:

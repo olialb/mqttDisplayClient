@@ -1,4 +1,20 @@
 #!/bin/bash
+# 
+# This file is part of the mqttDisplayClient distribution (https://github.com/olialb/mqttDisplayClient).
+# Copyright (c) 2025 Oliver Albold.
+# 
+# This program is free software: you can redistribute it and/or modify  
+# it under the terms of the GNU General Public License as published by  
+# the Free Software Foundation, version 3.
+#
+# This program is distributed in the hope that it will be useful, but 
+# WITHOUT ANY WARRANTY; without even the implied warranty of 
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License 
+# along with this program. If not, see <http://www.gnu.org/licenses/>.
+#
 abort()
 {
    echo "
@@ -16,6 +32,8 @@ set -e
 #options
 ##################
 pyautogui=disabled
+bh1750=disabled
+backlight=enabled
 
 while getopts "f:" opt; do
 	case $opt in
@@ -24,6 +42,11 @@ while getopts "f:" opt; do
 			then
 				echo "Install pyautogui!"
 				pyautogui=enabled
+			fi
+			if [ $OPTARG = backlight ]
+			then
+				echo "Install backlight support!"
+				bh1750=enabled
 			fi
 			;;
 	esac
@@ -39,7 +62,6 @@ if [ $pyautogui = enabled ]
 then	
 	echo "###########################################################################"
 	echo "Install required libs for pyautogui feature"
-	echo "!!Please remember to enable the feature in the mqttDisplayClient.ini file!!"
 	echo "###########################################################################"
 	sudo apt-get update
 	sudo apt-get install -y build-essential libsqlite3-dev   libpng-dev libjpeg-dev
@@ -49,6 +71,13 @@ then
 	pip install pyautogui
 fi
 
+if [ $backlight = enabled ]
+then	
+	echo "###########################################################################"
+	echo "Backlight control enabled"
+	echo "###########################################################################"
+	#nothing to install
+fi
 echo "#########################################"
 echo "Install the required python packages..."
 echo "#########################################"

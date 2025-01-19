@@ -1,6 +1,7 @@
     //Kiosk display mqtt client configuration
     Thing topic {name} "{name}" {{
         Channels:
+		    //Standard channels
             Type dimmer  : brightness  "display brightness"   [ stateTopic="{baseTopic}/{name}/brightness_percent", commandTopic="{baseTopic}/{name}/brightness_percent/set"]
             Type switch  : backlight   "backlight"            [ stateTopic="{baseTopic}/{name}/backlight", commandTopic="{baseTopic}/{name}/backlight/set" ]   
             Type switch  : blank       "Blank page"           [ stateTopic="{baseTopic}/{name}/blank_page", commandTopic="{baseTopic}/{name}/blank_page/set" ]   
