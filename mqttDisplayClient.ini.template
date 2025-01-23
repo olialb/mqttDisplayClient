@@ -46,6 +46,8 @@ pyautogui=$pyautogui
 #feature backlight alows you to control the brigtness off directly connected original raspberry pi displays like "Touch Display 2"
 #Disable this feature if you are not sure if your display support this feature! This avoids errors during startup. 
 backlight=$backlight
+#enable home assitant auto discovery
+haDiscover=$haDiscover
 
 [brightness]
 min=0
@@ -66,7 +68,7 @@ command=chromium {url}
 [panels]
 tagesschau=https://tagesschau.de
 openhab=http://openhab.local:8080
-clock=https://uhr.ptb.de|wait(1000);click(517,56)
+clock=https://uhr.ptb.de|wait(1000);click(569,75)
 habPanelRoot=http://openhab.local:8080/habpanel/index.html#/
 
 [shellCommands]
@@ -74,3 +76,9 @@ habPanelRoot=http://openhab.local:8080/habpanel/index.html#/
 #Format: keyword=shell command
 shutdown=sudo shutdown now
 reboot=sudo reboot
+
+[haDiscover]
+#device name used in ha discover. You need to adapt it if you have more than one devives in your network 
+deviceName=kiosk01
+#standard base topic of home assitant discovers. Only need to be changed
+base=homeassitant

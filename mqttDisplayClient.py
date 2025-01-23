@@ -27,6 +27,7 @@ import os
 #used to validate URLs:
 import validators
 from paho.mqtt import client as mqtt_client
+from haDiscover import HADiscovery
 
 #
 #initialize logger
@@ -42,6 +43,9 @@ CONFIG_FILE = 'mqttDisplayClient.ini' #name of the ini file
 PANEL_DEFAULT = 'DEFAULT' #keyword to set the website back to the configured FullPageOS default
 PANEL_SHOW_URL = 'URL' #keyword to set website as panel set over url topic
 PANEL_BLANK_URL = 'about:blank' #URL of the blank web page
+MANUFACTURER = "githab olialb"
+MODEL = "FullPageOS"
+IDLE = '>_'
     
 #import from the configuration file only the feature configuraion
 _featureCfg_ = configparser.ConfigParser()
@@ -73,10 +77,14 @@ try:
         if _featureCfg_['feature']['pyautogui'].upper() == 'ENABLED':
             _pyautogui_ = True
                 
+    _haDiscover_ = False    
+    if 'haDiscover' in _featureCfg_['feature']:
+        if _featureCfg_['feature']['haDiscover'].upper() == 'ENABLED':
+            _haDiscover_ = True
+                
 except Exception as inst:
     log.error(f"Error while reading ini file: {inst}")
     exit()
-
 #import the functions zo control the display with autogui 
 if _pyautogui_: 
     os.environ['DISPLAY'] = ':0' #environment variable needed for pyautogui
@@ -111,12 +119,14 @@ class MqttDisplayClient:
         self.client =None #mqtt client
         self.blankPageStatus='OFF' #status of blank page
         self.blankPageStatusPulished=None #last published status of blank page
-        self.autoguiFeedback='NONE' #feedback on last macro call
+        self.autoguiFeedback='OK' #feedback on last macro call
         self.autoguiFeedbackPublished=None #last pubished feedback on last macro call
         self.autoguiCommands=None #commands which will be performt when current website is loaded
         self.currentPanel=PANEL_DEFAULT #Panel which is currently shown
         self.currentPanelPublished=None #Panel which was last publised to broker
         self.reservedPanelNames = [PANEL_DEFAULT, PANEL_SHOW_URL ]
+        self.shellCmd = IDLE
+        self.publishedShellCmd = None
         
         #broker config:
         self.broker=None
@@ -128,12 +138,12 @@ class MqttDisplayClient:
         self.tConfig = { 
             'brightness': { 'topic': 'brightness_percent', 'publish': self.publish_brightness, 'set': self.set_brightness },
             'backlight': { 'topic': 'backlight', 'publish': self.publish_backlight, 'set': self.set_backlight },        
-            'system': { 'topic': 'system', 'publish': self.publish_system, 'set': self.system_command }, 
+            'system': { 'topic': 'system', 'publish': self.publish_system }, 
+            'shell': { 'topic': 'shell', 'publish': self.publish_shell_cmd, 'set': self.set_shell_cmd}, 
             'url': { 'topic' : 'url', 'publish': self.publish_url, 'set': self.set_url },
             'panel': { 'topic' : 'panel', 'publish': self.publish_panel, 'set': self.set_panel },
             'blank': {'topic':'blank_page', 'publish' : self.publish_blank_page_status, 'set':self.set_blank_page },
-            'autogui' : {'topic':'autogui', 'publish' : self.publish_autogui_results, 'set':self.set_autogui },
-            'status' : {'topic':'status', 'publish' : self.publish_status }
+            'autogui' : {'topic':'autogui', 'publish' : self.publish_autogui_results, 'set':self.set_autogui }
             }
         self.read_config_file()
         self.read_default_url()
@@ -178,11 +188,12 @@ class MqttDisplayClient:
             self.tConfig['backlight']['cmd'] = config['backlight']['set']
             self.tConfig['backlight']['get'] = config['backlight']['get']
             
-            #read mgtt topic config system
-            self.tConfig['system']['commands'] = {}
+            #read config system commands
+            self.tConfig['shell']['commands'] = {}
             cmd_items = config.items( "shellCommands" )
             for key, cmd in cmd_items:
-                self.tConfig['system']['commands'][key.upper()] = cmd
+                self.tConfig['shell']['commands'][key.upper()] = cmd
+                
             #read new url command
             self.tConfig['url']['command'] = config['url']['command']        
 
@@ -197,6 +208,10 @@ class MqttDisplayClient:
                     self.tConfig['panel']['panels'][key.upper()] = panel
                 else:
                     raise Exception(f"Configured URL not well formed: {key}={site}")
+                    
+            #read config HADiscovery
+            self.haDeviceName = config['haDiscover']['deviceName'] 
+            self.haBase = config['haDiscover']['base']
                     
         except Exception as inst:
             log.error(f"Error while reading ini file: {inst}")
@@ -226,10 +241,10 @@ class MqttDisplayClient:
         self.autoguiFeedback=feedback
         
     def call_autoguiCommands( self, cmds ):       
-        if self.autoguiFeedback == 'EXCECUTION':
+        if self.autoguiFeedback[0:len('EXEC')] == 'EXEC':
             log.warning(f"Thread allready running can not excecute: '{cmds}'")
             return
-        self.autoguiFeedback = 'EXCECUTION'
+        self.autoguiFeedback = 'EXEC: '+cmds
         #create thread
         params=[cmds]
         thread = threading.Thread(target=self.thread_autogui_func, args=(params))
@@ -363,14 +378,33 @@ class MqttDisplayClient:
             else:
                 self.backlight=msg
     
-    def system_command( self, myConfig, msg ):
+    def thread_shell_cmd_func( self, cmd ):
+        #excecute system cmd
+        err, msg = subprocess.getstatusoutput( cmd )
+        if err != 0:
+            log.error(f"Error {err} executing command: {msg}")
+            self.shellCmd=IDLE
+        else:
+            self.shellCmd=IDLE
+
+    def set_shell_cmd( self, myConfig, msg ):
         msg = msg.strip().upper()
+        print(myConfig)
         if msg.upper() in myConfig['commands']:
+            if self.shellCmd != IDLE:
+                #currently is another command running. Skip this command
+                log.warning(f"Shell command allready running skip: {msg}")
+                return
             #call the configured command
             log.debug(f"Call command: {myConfig['commands'][msg]}")
-            err, msg = subprocess.getstatusoutput( myConfig['commands'][msg] )
-            if err != 0:
-                log.error(f"Error {err} executing command: {msg}")
+            self.shellCmd = msg
+            #publish that the command is now executed
+            self.publish_shell_cmd( self.topicRoot+'/'+myConfig['topic'], myConfig )
+            #ürepare thread
+            params=[myConfig['commands'][msg]]
+            thread = threading.Thread(target=self.thread_shell_cmd_func, args=(params))
+            #run the thread
+            thread.start()
         else:
             log.info(f"Unknown command payload received: '{msg}'")                    
 
@@ -435,7 +469,6 @@ class MqttDisplayClient:
         else:
             self.current_url = newsite
  
-
     def set_blank_page( self, myConfig, msg ):
         #Synax OK we can call the command to set the backlight status
         msg = msg.strip()
@@ -468,24 +501,12 @@ class MqttDisplayClient:
         self.client.on_message = MqttDisplayClient.on_message
 
 
-    def publish_status(self, topic, myConfig):
-        #publich online status
-        #send message to broker
-        if self.unpublished == True:
-            result = self.client.publish(topic, "online")
-            # result: [0, 1]
-            status = result[0]
-            if status == 0:
-                log.debug(f"Send 'online' to topic {topic}")
-            else:
-                log.error(f"Failed to send message to topic {topic}")
-
     def publish_system(self, topic, myConfig):
         #collect system info
         systemInfo = {}
-        systemInfo['cpu_temp'] = gpiozero.CPUTemperature().temperature
+        systemInfo['cpu_temp'] = "%.2f" % gpiozero.CPUTemperature().temperature
         systemInfo['cpu_load'] = int(gpiozero.LoadAverage().load_average*100)
-        systemInfo['disk_usage'] = gpiozero.DiskUsage().usage 
+        systemInfo['disk_usage'] = "%.2f" % gpiozero.DiskUsage().usage 
         if _pyautogui_ == True:
             systemInfo['mouse_position'] = pyautogui.position()
             systemInfo['display_size'] = pyautogui.size()
@@ -523,6 +544,17 @@ class MqttDisplayClient:
                     log.error(f"Failed to send message to topic {topic}")
         else:
             log.error(f"Error reading display brightness: {err}")
+
+    def publish_shell_cmd(self, topic, myConfig):
+        if self.shellCmd != self.publishedShellCmd or self.unpublished == True:
+            result = self.client.publish(topic, self.shellCmd.capitalize())
+            # result: [0, 1]
+            status = result[0]
+            if status == 0:
+                log.debug(f"Send '{self.shellCmd}' to topic {topic}")
+                self.publishedShellCmd = self.shellCmd
+            else:
+                log.error(f"Failed to send message to topic {topic}")
 
     def publish_backlight(self, topic, myConfig):
         if _backlight_ == False:
@@ -565,7 +597,7 @@ class MqttDisplayClient:
                 
     def publish_panel(self, topic, myConfig):
         if self.currentPanel != self.currentPanelPublished or self.unpublished == True:
-            result = self.client.publish(topic, self.currentPanel)
+            result = self.client.publish(topic, self.currentPanel.capitalize())
             # result: [0, 1]
             status = result[0]
             if status == 0:
@@ -598,7 +630,74 @@ class MqttDisplayClient:
                     self.autoguiFeedbackPublished = self.autoguiFeedback
                 else:
                     log.error(f"Failed to send message to topic {topic}")
-                
+                    
+    def ha_publish(self, topic, payload):
+        if _haDiscover_ == True:
+            #publish new entity
+            result = self.client.publish(topic, payload, retain=True)
+        else: 
+            #delete entity
+            result = self.client.publish(topic, "", retain=True)
+        status = result[0]
+        if status == 0:
+            log.debug(f"Send '{payload}' to topic {topic}")
+        else:
+            log.error(f"Failed to send message to topic {topic}")
+
+    def ha_discover( self ):
+        #pubish all topics that home assisstant can discover them
+        ha = HADiscovery( self.haDeviceName, self.haBase, MANUFACTURER, MODEL )
+        
+        #cpu temperature
+        topic, payload = ha.sensor( "cpu temperature", self.topicRoot+"/system", "cpu_temp", "temperature", "°C" )
+        self.ha_publish(topic, payload)
+ 
+        #cpu load
+        topic, payload = ha.sensor( "cpu load", self.topicRoot+"/system", "cpu_load" )
+        self.ha_publish(topic, payload)
+ 
+        #disk usage
+        topic, payload = ha.sensor( "disk usage", self.topicRoot+"/system", "disk_usage", "battery", "%" )
+        self.ha_publish(topic, payload)
+        
+        #blank page switch
+        topic, payload = ha.switch( "blank page", self.topicRoot+"/blank_page" )
+        self.ha_publish(topic, payload)
+        
+        #url
+        topic, payload = ha.text( "URL", self.topicRoot+"/url" )
+        self.ha_publish(topic, payload)
+        
+        #panel select
+        options = [PANEL_DEFAULT, PANEL_SHOW_URL]+ list(self.tConfig['panel']['panels'].keys()) 
+        for i in range(len(options)):
+            options[i] = options[i].capitalize()
+        topic, payload = ha.select( "Panel", self.topicRoot+"/panel", options )
+        self.ha_publish(topic, payload)
+        
+        #shell commands
+        options = [IDLE] + list(self.tConfig['shell']['commands'].keys()) 
+        for i in range(len(options)):
+            options[i] = options[i].capitalize()
+        topic, payload = ha.select( "shell command", self.topicRoot+"/shell", options )
+        self.ha_publish(topic, payload)
+        
+        if _backlight_ == True:
+            #backlight "light"
+            topic, payload = ha.light( "backlight", self.topicRoot+"/backlight", self.topicRoot+"/brightness_percent" )
+            self.ha_publish(topic, payload)
+
+        if _pyautogui_ == True:
+            #mouse x position
+            topic, payload = ha.sensor( "Mouse X Pos", self.topicRoot+"/system", "mouse_position[0]")
+            self.ha_publish(topic, payload)
+            #mouse y position
+            topic, payload = ha.sensor( "Mouse Y Pos", self.topicRoot+"/system", "mouse_position[1]")
+            self.ha_publish(topic, payload)
+            #autogui command string
+            topic, payload = ha.text( "AutoGUI command", self.topicRoot+"/autogui" )
+            self.ha_publish(topic, payload)
+
     def publish_loop(self):
         #endless publish loop
         self.unpublished=True
@@ -621,6 +720,7 @@ class MqttDisplayClient:
 def mqtt_display_client():
     mqttDisplayClient = MqttDisplayClient( CONFIG_FILE )
     mqttDisplayClient.connect()
+    mqttDisplayClient.ha_discover()
     mqttDisplayClient.publish_loop()
 
 if __name__ == '__main__':

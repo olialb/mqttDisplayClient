@@ -48,6 +48,11 @@ while getopts "f:" opt; do
 				echo "Install backlight support!"
 				bh1750=enabled
 			fi
+			if [ $OPTARG = haDiscover ]
+			then
+				echo "Activate home assistant discovery!"
+				haDiscover=enabled
+			fi
 			;;
 	esac
 done

@@ -9,6 +9,8 @@ This MQTT client is extending the [FullPageOS](https://github.com/guysoft/FullPa
 * Reboot and Shutown the Kioskdisplay
 * Read status like CPU temparature, CPU load,....
 
+**Home Assistant discovery** can be activated for all MQTT the topics.
+
 The configuration is done over an ini file and allows you to adapt the commands to your needs. As default it is configured for an official Raspberry PI 7 inch Touch Display 2. How to setup this display with [FullPageOS](https://github.com/guysoft/FullPageOS) you can read here: [Installation and config of FullPageOS](https://albold-home.de/part-1-installation-and-config-of-fullpage-os/)
 
 ## Implementation notes
@@ -188,8 +190,10 @@ The system topic is exposing an json string with some system information. It has
 * `{'disk_usage': X}`: X is the current disc usage in percent
 * `{'default_url': 'url'}`: 'url' is the default url after startup which is configured for FullPageOS
   
+### shell (string)
+The shell topic is a command topic. Over `kioskdisplay/DEVICE_NETWORK_NAME/shell/set` it is possible to call shell commands which are configured in the ini file in section [[shellCommands]](#section-shellCommands). Payload is the configured keyword for each command. By default are the keywords `REBOOT` and `SHUTDOWN`supported
 
-Ower the command topic  `kioskdisplay/DEVICE_NETWORK_NAME/system/set` it is possible to call shell commands which are configured in the ini file in section [[system]](#section-system). Payload is the configured keyword for each command. By default are the keywords `REBOOT` and `SHUTDOWN`supported
+The topic `kioskdisplay/DEVICE_NETWORK_NAME/shell` exposes a prompt '>_' when no command is executed. While the command is executed it exposes the keyword of the command
 
 ### url (string)
 The url topic `kioskdisplay/DEVICE_NETWORK_NAME/url` exposes the url of the website which is currently shown in the display.
