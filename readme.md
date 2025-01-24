@@ -161,7 +161,7 @@ tagesschau=https://tagesschau.de
 
 The *shortcuts* are **not** case sensitive in mqtt commands.
 
-### Section **[shellCommands]**
+#### Section **[shellCommands]**
 In this section are the systen shell commands configured which you can call with the mqtt command topic. By default a command to reboot and a command to shutdown the system is configured. You can add more commands, if needed. The syntax is:
 ```ini
 keyword=put your shell command
@@ -172,7 +172,7 @@ reboot=sudo reboot
 ```
 The keyword *REBOOT* is later used to call the command over mqtt with command topic *system/set*. The *keywords* are **not** case sensitive in mqtt commands.
 
-### Section **[haDiscover]**
+#### Section **[haDiscover]**
 This section configures the home assistant auto dicovery topics
 * *deviceName=* name of this display device in the discovery topics
 * *base=* root name of all discovery topics. Keep this to *homeasstant*. This is default configuration of home assistant
