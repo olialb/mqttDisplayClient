@@ -50,7 +50,7 @@ bash setup.sh
 ```
 As an alternative you can add optional features during with the setup.sh call:
 ```
-bash setup.sh -f pyautogui -f backlight
+bash setup.sh -f pyautogui -f backlight -fhaDiscover
 ```
 This installs the required python packages and configures a systemd service which is atomatically running the mqtt client after startup. The systemd service is started with the current user rights.
 
@@ -172,15 +172,21 @@ reboot=sudo reboot
 ```
 The keyword *REBOOT* is later used to call the command over mqtt with command topic *system/set*. The *keywords* are **not** case sensitive in mqtt commands.
 
+### Section **[haDiscover]**
+This section configures the home assistant auto dicovery topics
+* *deviceName=* name of this display device in the discovery topics
+* *base=* root name of all discovery topics. Keep this to *homeasstant*. This is default configuration of home assistant
+
+
 ## Exposed MQTT topics and usage
 
 The MQTT client is exposing the following topics:
 
 ### brigtness (numeric)
-The current brightness of the display is exposed with the topic brightness `kioskdisplay/DEVICE_NETWORK_NAME/brightness`. The value is a percentage value from 0 to 100. A new brigtness value can be set over the command topic `display/DEVICE_NETWORK_NAME/brightness/set`
+The current brightness of the display is exposed with the topic brightness `kiosk/01/display/brightness`. The value is a percentage value from 0 to 100. A new brigtness value can be set over the command topic `kiosk/01/display/brightness/set`
 
 ### backlight (switch)
-The expose the status if the backlight is swithed on or off: `kioskdisplay/DEVICE_NETWORK_NAME/backlight`. The backlight can be switched on/off over the command topic `display/DEVICE_NETWORK_NAME/brightness/set`. Payload is `ON` or `OFF`.
+The expose the status if the backlight is swithed on or off: `kiosk/01/*deviceName*//backlight`. The backlight can be switched on/off over the command topic `kiosk/01/display/brightness/set`. Payload is `ON` or `OFF`.
 
 ### system (string)
 The system topic is exposing an json string with some system information. It has the following content: 
@@ -191,19 +197,19 @@ The system topic is exposing an json string with some system information. It has
 * `{'default_url': 'url'}`: 'url' is the default url after startup which is configured for FullPageOS
   
 ### shell (string)
-The shell topic is a command topic. Over `kioskdisplay/DEVICE_NETWORK_NAME/shell/set` it is possible to call shell commands which are configured in the ini file in section [[shellCommands]](#section-shellCommands). Payload is the configured keyword for each command. By default are the keywords `REBOOT` and `SHUTDOWN`supported
+The shell topic is a command topic. Over `kiosk/01/display/shell/set` it is possible to call shell commands which are configured in the ini file in section [[shellCommands]](#section-shellCommands). Payload is the configured keyword for each command. By default are the keywords `REBOOT` and `SHUTDOWN`supported
 
-The topic `kioskdisplay/DEVICE_NETWORK_NAME/shell` exposes a prompt '>_' when no command is executed. While the command is executed it exposes the keyword of the command
+The topic `kiosk/01/display/shell` exposes a prompt '>_' when no command is executed. While the command is executed it exposes the keyword of the command
 
 ### url (string)
-The url topic `kioskdisplay/DEVICE_NETWORK_NAME/url` exposes the url of the website which is currently shown in the display.
-With the command topic `kioskdisplay/DEVICE_NETWORK_NAME/url/set` can an individual URL set. To show this URL you must set panel command topic to **URL** (see next section):
+The url topic `kiosk/01/display/url` exposes the url of the website which is currently shown in the display.
+With the command topic `kiosk/01/display/url/set` can an individual URL set. To show this URL you must set panel command topic to **Url**! (see next section):
 
 * *url*: Any valid full qualified url including `http://` or `https://`. If the URL is not fully qualified the command is ignored. For pages in your local network use the ip address or mypage.local as address!
 
 ### panel (string)
-The panel topic `kioskdisplay/DEVICE_NETWORK_NAME/panel` exposes the url of the website which is currently shown in the display.
-With the command topic `kioskdisplay/DEVICE_NETWORK_NAME/panel/set` can the url be changed. The payload can have the following content:
+The panel topic `kiosk/01/display/panel` exposes the url of the website which is currently shown in the display.
+With the command topic `kiosk/01/display/panel/set` can the url be changed. The payload can have the following content:
 
 * `DEFAULT`: Set the panel back to the [FullPageOS](https://github.com/guysoft/FullPageOS) default page
 * `URL`: Set the url in the display which was set over the url command topic (previous section).
@@ -219,8 +225,8 @@ The feature uses the [pyautogui](https://pyautogui.readthedocs.io/en/latest/) pr
 The MQTT client is exposing the following topics when the feature *pyautogui* is enabled:
 
 #### autogui (numeric)
-This topic  `kioskdisplay/DEVICE_NETWORK_NAME/autogui` shows the last result of an autogui command string. If everything worked fine 'OK' is exposed. In case of an error, the error message is exposed.
-A list of autogui commands seperated by semicolon can be send over the command topic `display/DEVICE_NETWORK_NAME/autogui/set`
+This topic  `kiosk/01/display/autogui` shows the last result of an autogui command string. If everything worked fine 'OK' is exposed. In case of an error, the error message is exposed.
+A list of autogui commands seperated by semicolon can be send over the command topic `kiosk/01/display/autogui/set`
 The following command can be send:
 
 * **click(x,y)** Performs a left [mouse click](https://pyautogui.readthedocs.io/en/latest/mouse.html#mouse-clicks) on x,y postition

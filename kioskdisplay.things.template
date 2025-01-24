@@ -1,12 +1,12 @@
     //Kiosk display mqtt client configuration
     Thing topic {name} "{name}" {{
         Channels:
-		    //Standard channels
             Type dimmer  : brightness  "display brightness"   [ stateTopic="{baseTopic}/{name}/brightness_percent", commandTopic="{baseTopic}/{name}/brightness_percent/set"]
             Type switch  : backlight   "backlight"            [ stateTopic="{baseTopic}/{name}/backlight", commandTopic="{baseTopic}/{name}/backlight/set" ]   
             Type switch  : blank       "Blank page"           [ stateTopic="{baseTopic}/{name}/blank_page", commandTopic="{baseTopic}/{name}/blank_page/set" ]   
             Type string  : url         "url"                  [ stateTopic="{baseTopic}/{name}/url", commandTopic="{baseTopic}/{name}/url/set" ]
             Type string  : panel       "panel"                [ stateTopic="{baseTopic}/{name}/panel", commandTopic="{baseTopic}/{name}/panel/set" ]
+            Type string  : shell       "Shell command"        [ stateTopic="{baseTopic}/{name}/shell", commandTopic="{baseTopic}/{name}/shell/set" ]
             Type number  : cpu_temperature "CPU temperatur"   [ stateTopic="{baseTopic}/{name}/system", transformationPattern="JSONPATH:$.cpu_temp" ]
             Type number  : cpu_load    "CPU load"             [ stateTopic="{baseTopic}/{name}/system", transformationPattern="JSONPATH:$.cpu_load" ]
             Type number  : disk_usage  "Disk usage"           [ stateTopic="{baseTopic}/{name}/system", transformationPattern="JSONPATH:$.disk_usage" ]
