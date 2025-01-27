@@ -81,4 +81,4 @@ reboot=sudo reboot
 #device name used in ha discover. You need to adapt it if you have more than one devives in your network 
 deviceName=kiosk01
 #standard base topic of home assitant discovers. Only need to be changed
-base=homeassitant
+base=homeassistant
