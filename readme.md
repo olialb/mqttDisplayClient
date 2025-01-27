@@ -50,7 +50,7 @@ bash setup.sh
 ```
 As an alternative you can add optional features during with the setup.sh call:
 ```
-bash setup.sh -f pyautogui -f backlight -fhaDiscover
+bash setup.sh -f pyautogui -f backlight -f haDiscover
 ```
 This installs the required python packages and configures a systemd service which is atomatically running the mqtt client after startup. The systemd service is started with the current user rights.
 
@@ -116,6 +116,7 @@ Section to enable and diable additional features
 
 * *pyautogui*= enables or disables autogui feature to control the GUI remotly (possible values: *enabled* or *disabled*)
 * *backlight*= enables or disables feature to control brightness and backlight ON/OFF state remotly (possible values: *enabled* or *disabled*). Default configuraion in the ini file is for Raspberry PI Touch Panel 2.
+* *haDiscover*= enables or disables Home Assistant auto discover feature (possible values: *enabled* or *disabled*). Thanks to that you can automatically see new entity for you kiosk instance in MQTT integration.
   
 #### Section **[brightness]**
 This section configure the shell commands which are needed to read and set the display brightness. By default the section is configured for an original raspberry pi 7 inch touch display 2. Even if you use this display you may need to adapt the display ID in the commands. You can find your local ID with:
