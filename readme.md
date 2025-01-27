@@ -116,6 +116,7 @@ Section to enable and diable additional features
 
 * *pyautogui*= enables or disables autogui feature to control the GUI remotly (possible values: *enabled* or *disabled*)
 * *backlight*= enables or disables feature to control brightness and backlight ON/OFF state remotly (possible values: *enabled* or *disabled*). Default configuraion in the ini file is for Raspberry PI Touch Panel 2.
+* *haDiscover*= enables or disables Home Assistant auto discover feature (possible values: *enabled* or *disabled*). Thanks to that you can automatically see new entity for you kiosk instance in MQTT integration.
   
 #### Section **[brightness]**
 This section configure the shell commands which are needed to read and set the display brightness. By default the section is configured for an original raspberry pi 7 inch touch display 2. Even if you use this display you may need to adapt the display ID in the commands. You can find your local ID with:
