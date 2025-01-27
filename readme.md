@@ -50,7 +50,7 @@ bash setup.sh
 ```
 As an alternative you can add optional features during with the setup.sh call:
 ```
-bash setup.sh -f pyautogui -f backlight -fhaDiscover
+bash setup.sh -f pyautogui -f backlight -f haDiscover
 ```
 This installs the required python packages and configures a systemd service which is atomatically running the mqtt client after startup. The systemd service is started with the current user rights.
 
