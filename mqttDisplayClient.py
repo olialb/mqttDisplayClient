@@ -389,7 +389,6 @@ class MqttDisplayClient:
 
     def set_shell_cmd( self, myConfig, msg ):
         msg = msg.strip().upper()
-        print(myConfig)
         if msg.upper() in myConfig['commands']:
             if self.shellCmd != IDLE:
                 #currently is another command running. Skip this command
