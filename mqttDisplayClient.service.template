@@ -24,8 +24,7 @@ Restart=on-failure
 User=$USER
 Environment=PYTHONPATH=/home/$USER/mqttDisplayClient
 WorkingDirectory=/home/$USER/mqttDisplayClient
-ExecStart=/home/$USER/mqttDisplayClient/venv/bin/python mqttDisplayClient.py
-#ExecStart=bash -c 'cd/home/$USER/mqttDisplayClient && ./mqttDisplayClient'
+ExecStart=/home/$USER/mqttDisplayClient/venv/bin/python mqtt_display_client.py
 
 [Install]
 WantedBy=multi-user.target

@@ -39,6 +39,10 @@ defaultUrl=/boot/firmware/fullpageos.txt
 [logging]
 #configure the log level (DEBUG, INFO, WARNING, ERROR, CRITICAL)
 level=WARNING
+#log file path
+path=log
+#log file name
+file=mqttDisplayClient.log
 
 [feature]
 #enable display control with pyautogui. Allowed values (enabled/disabled)
@@ -62,13 +66,18 @@ OFF=1
 set=sudo echo {value} | sudo tee /sys/class/backlight/{displayID}/bl_power
 get=cat /sys/class/backlight/{displayID}/bl_power
 
-[url]
-command=chromium {url}
+[chrome]
+#port for chrome DevTools API (add chrome command line flag: --remote-debugging-port=9222)
+port=9222
+#After this timeout in seconds a page in the backgound is closed (0 is dispabled)
+pageTimeout=600
+#After this timeout in seconds the page in the foreground is reloaded (0 is dispabled)
+reloadTimeout=3600
 
 [panels]
-tagesschau=https://tagesschau.de
-openhab=http://openhab.local:8080
-clock=https://uhr.ptb.de|wait(1000);click(569,75)
+tagesschau=https://www.tagesschau.de/
+openhab=http://openhab.local:8080/overview
+clock=https://uhr.ptb.de/|wait(1000);click(569,75)
 habPanelRoot=http://openhab.local:8080/habpanel/index.html#/
 
 [shellCommands]
@@ -76,6 +85,9 @@ habPanelRoot=http://openhab.local:8080/habpanel/index.html#/
 #Format: keyword=shell command
 shutdown=sudo shutdown now
 reboot=sudo reboot
+#special command to be able to test that shell commands are working. Can be deleted if test cases are not performed:
+test=echo "Test" > test.txt;sleep 5;rm test.txt
+
 
 [haDiscover]
 #device name used in ha discover. You need to adapt it if you have more than one devives in your network 

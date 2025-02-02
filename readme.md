@@ -28,7 +28,31 @@ Optional to control the mouse and send keyboard commands:
 All this libraries are installed with the `setup.sh` shell script, which is part of this project. See next section [Installation](#installation)
 
 All the other used python libraries are standard in latest Raspbery PI OS and should be available without installation.
- 
+
+## Preparation of chrome in FullPageOS
+In the latest version the mqtt display client is opening and closing tabs in chrome by using the [Chrome DevTools API](https://chromedevtools.github.io/devtools-protocol/). For this you need to add one additional option when chrome is started.
+[FullPageOS](https://github.com/guysoft/FullPageOS) is using a script to start chrome during startup in kiosk mode. Open this script with an editor:
+
+```
+sudo nano /opt/custompios/scripts/start_chromium_browser
+```
+At the beginning of the script you find the list of flags:
+```
+flags=(
+   --kiosk
+   ...
+ )
+```
+Add here at the end the flag to activate the chrome debugging port
+```
+flags=(
+   --kiosk
+   ...
+   --remote-debugging-port=9222
+)
+```
+Reboot your system!
+After that chrome is listening on port 9222 for chrome devtools protocol. 
 
 ## Installation 
 **Precondition**: [FullPageOS](https://github.com/guysoft/FullPageOS) is installed on your Raspberry PI and up and running.
@@ -50,7 +74,7 @@ bash setup.sh
 ```
 As an alternative you can add optional features during with the setup.sh call:
 ```
-bash setup.sh -f pyautogui -f backlight -f haDiscover
+bash setup.sh -f pyautogui -f backlight -fhaDiscover
 ```
 This installs the required python packages and configures a systemd service which is atomatically running the mqtt client after startup. The systemd service is started with the current user rights.
 
@@ -71,7 +95,7 @@ sudo systemctl stop mqttDisplayClient
 Adapt the ini file in section [[logging]](#section-logging) and enable *DEBUG* logging level. Than activate the virtual python environment and start the service by hand:
 ```bash
 source venv/bin/activate
-python mqttDisplayClient.py
+python mqtt_display_client.py
 ```
 Check the logging output. After everything is fixed, set the logging level back to *ERROR*, deactivate the virtual environment and start the systemd service again with:
 ```bash
@@ -140,12 +164,11 @@ This values are used to calculate the brighness from 0% to 100% in the MQTT topi
 * *set=* shell command to set the backlight on or off. String '{value}' and '{displayID}' will be replaced by configured values
 * *get=* shell command to read the display backlight status. String '{displayID}' will be replaced by the configured value
 
-#### Section **[url]**
-Normally you don't need to adapt this section. It is used to define the shell command to call a webpage in chromium browser.
-```ini
-command=chromium {URL}
-```
-The strong '{URL}' is replaced with the website which the mqtt client set over the command topic */url/set*.
+#### Section **[chrome]**
+This section configures the control of chrome tabs ov the [Chrome DevTools API](https://chromedevtools.github.io/devtools-protocol/).
+* *port=* Normally you don't need to adapt this port. See [Chrome preparation](#preparation-of-chrome-in-fullpageos).
+* *pageTimeout=* After this amount of seconds, is a chrome tab closed, when it was not in focus during that time. (0 keeps the tabs open)
+* *reloadTimeout=* After this amount of seconds, is the chrome tab which is in focus, reloaded (0 dispbales reload)
 
 #### Section **[panels]**
 All entries in this section are website shortcuts which you can use to open a webpage in your kioskdisplay with the mptt command topic *url*
@@ -156,11 +179,11 @@ panelName=full qualified url|optional autogui command list separated by semicolo
 Examples:
 ```ini
 clock=https://uhr.ptb.de|wait(1000);click(517,56)
-tagesschau=https://tagesschau.de
-
+tagesschau=https://www.tagesschau.de/
 ```
+The panel names are **not** case sensitive in mqtt commands. The following panel names are reserved for internal usage: *DEFAULT*, *BLANK*, *URL* (see [panel topic](#panel-string))
 
-The *shortcuts* are **not** case sensitive in mqtt commands.
+***Important Remark***: When a url is opened in chrome, chrome may chnage the url while loading. Check the final url in a chrome browser or in the and put it here. This ensures, that open chrome tabs can be assigned to the panel names! You can verify this also against the content of the in the [url topic](#url-string)
 
 #### Section **[shellCommands]**
 In this section are the systen shell commands configured which you can call with the mqtt command topic. By default a command to reboot and a command to shutdown the system is configured. You can add more commands, if needed. The syntax is:
@@ -204,17 +227,20 @@ The topic `kiosk/01/display/shell` exposes a prompt '>_' when no command is exec
 
 ### url (string)
 The url topic `kiosk/01/display/url` exposes the url of the website which is currently shown in the display.
-With the command topic `kiosk/01/display/url/set` can an individual URL set. To show this URL you must set panel command topic to **Url**! (see next section):
+With the command topic `kiosk/01/display/url/set` can an individual URL set. The panel name will automatically switch to **Url**! (see next section):
 
 * *url*: Any valid full qualified url including `http://` or `https://`. If the URL is not fully qualified the command is ignored. For pages in your local network use the ip address or mypage.local as address!
 
 ### panel (string)
-The panel topic `kiosk/01/display/panel` exposes the url of the website which is currently shown in the display.
-With the command topic `kiosk/01/display/panel/set` can the url be changed. The payload can have the following content:
+The panel topic `kiosk/01/display/panel` exposes the panel name of the website which is currently shown in the display.
+With the command topic `kiosk/01/display/panel/set` the panel can be changed. The payload can have the following content:
 
 * `DEFAULT`: Set the panel back to the [FullPageOS](https://github.com/guysoft/FullPageOS) default page
-* `URL`: Set the url in the display which was set over the url command topic (previous section).
+* `URL`: Shows the url in the display which was previously set over the url command topic (previous section).
+* `BLANK`: Shows a blank page. For example: Can be used if display backlight is switched off
 * *panelName*: Set the website to the URL which is configured for this *panelName* in the ini file section [[panels]](#section-panels).
+
+*Remark*: When you set an new panel the [mqttDisplayClient](https://github.com/olialb/mqttDisplayClient) the open chrome tabs. If one the configured url exits, this tab is put in front. If no tab with the configured url esxist an new tab is opened. You can control the life time of tabs in the [Chrome](#section-chrome) section
 
 ## Feature *pyautogui*
 The *autogui* feature allows the control of the website which is shown in the dsiplay over mouse and keyboard commmands. 
@@ -250,7 +276,7 @@ The following command can be send:
 * **scroll(x)** [scroll](https://pyautogui.readthedocs.io/en/latest/mouse.html#mouse-scrolling) screen vertical by x
 * **scrollh(x)** [scroll](https://pyautogui.readthedocs.io/en/latest/mouse.html#mouse-scrolling) screen horizontal by x
 * **wait(x)** wait x milliseconds
-* **write('...')** [write](https://pyautogui.readthedocs.io/en/latest/keyboard.html#the-write-function) the given string over the keyboard
+* **write('...')** [write](https://pyautogui.readthedocs.io/en/latest/keyboard.html#the-write-function) the given string (like typed over keyboard).
 * **press(XXX)** Press the given [key](https://pyautogui.readthedocs.io/en/latest/keyboard.html#keyboard-keys)
 * **keydown(XXX)** Hold the given [key](https://pyautogui.readthedocs.io/en/latest/keyboard.html#keyboard-keys) down
 

@@ -70,7 +70,7 @@ then
 	echo "###########################################################################"
 	sudo apt-get update
 	sudo apt-get install -y build-essential libsqlite3-dev   libpng-dev libjpeg-dev
-	sudo apt-get install -y  python3-tk python3-dev
+	sudo apt-get install -y  python3-tk python3-dev gnome-screenshot
 	python -m pip install --upgrade pip
 	python -m pip install --upgrade Pillow
 	pip install pyautogui
@@ -92,13 +92,16 @@ pip install rpi.gpio
 pip install rpi.lgpio
 pip install validators
 pip install paho-mqtt
+pip install websockets
+pip install requests
+pip install -U pytest
 
 echo "#########################################"
 echo "Fill templates"
 echo "#########################################"
 echo ""
 eval "echo \"$(cat mqttDisplayClient.ini.template)\"" >mqttDisplayClient.ini
-python openhabFillThingsTemplate.py 
+python fill_oh_things_template.py 
  
 echo "################################################"
 echo "Install systemd serice..."
