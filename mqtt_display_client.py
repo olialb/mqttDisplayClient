@@ -266,60 +266,60 @@ class MqttDisplayClient: # pylint: disable=too-many-instance-attributes
             sys.exit()
 
         # read ini file values
-        #try:
+        try:
             # read server config
-        self.broker = config["global"]["broker"]
-        self.port = int(config["global"]["port"])
-        self.username = config["global"]["username"]
-        self.password = config["global"]["password"]
-        self.display_id = config["global"]["displayID"]
-        self.device_name = config["global"]["deviceName"]
-        self.topic_root = config["global"]["topicRoot"] + "/" + self.device_name
-        self.reconnect_delay = int(config["global"]["reconnectDelay"])
-        self.publish_delay = int(config["global"]["publishDelay"])
-        self.full_publish_cycle = int(config["global"]["fullPublishCycle"])
-        self.default_url_file = config["global"]["defaultUrl"]
+            self.broker = config["global"]["broker"]
+            self.port = int(config["global"]["port"])
+            self.username = config["global"]["username"]
+            self.password = config["global"]["password"]
+            self.display_id = config["global"]["displayID"]
+            self.device_name = config["global"]["deviceName"]
+            self.topic_root = config["global"]["topicRoot"] + "/" + self.device_name
+            self.reconnect_delay = int(config["global"]["reconnectDelay"])
+            self.publish_delay = int(config["global"]["publishDelay"])
+            self.full_publish_cycle = int(config["global"]["fullPublishCycle"])
+            self.default_url_file = config["global"]["defaultUrl"]
 
-        # read mqtt topic config brighness
-        self.topic_config["brightness"]["min"] = int(config["brightness"]["min"])
-        self.topic_config["brightness"]["max"] = int(config["brightness"]["max"])
-        self.topic_config["brightness"]["cmd"] = config["brightness"]["set"]
-        self.topic_config["brightness"]["get"] = config["brightness"]["get"]
+            # read mqtt topic config brighness
+            self.topic_config["brightness"]["min"] = int(config["brightness"]["min"])
+            self.topic_config["brightness"]["max"] = int(config["brightness"]["max"])
+            self.topic_config["brightness"]["cmd"] = config["brightness"]["set"]
+            self.topic_config["brightness"]["get"] = config["brightness"]["get"]
 
-        # read mqtt topic config backlight
-        self.topic_config["backlight"]["ON"] = config["backlight"]["ON"]
-        self.topic_config["backlight"]["OFF"] = config["backlight"]["OFF"]
-        self.topic_config["backlight"]["cmd"] = config["backlight"]["set"]
-        self.topic_config["backlight"]["get"] = config["backlight"]["get"]
+            # read mqtt topic config backlight
+            self.topic_config["backlight"]["ON"] = config["backlight"]["ON"]
+            self.topic_config["backlight"]["OFF"] = config["backlight"]["OFF"]
+            self.topic_config["backlight"]["cmd"] = config["backlight"]["set"]
+            self.topic_config["backlight"]["get"] = config["backlight"]["get"]
 
-        # read config system commands
-        self.topic_config["shell"]["commands"] = {}
-        cmd_items = config.items("shellCommands")
-        for key, cmd in cmd_items:
-            self.topic_config["shell"]["commands"][key.upper()] = cmd
+            # read config system commands
+            self.topic_config["shell"]["commands"] = {}
+            cmd_items = config.items("shellCommands")
+            for key, cmd in cmd_items:
+                self.topic_config["shell"]["commands"][key.upper()] = cmd
 
-        #create chrome Page class
-        self.init_chrome_api(config)
+            #create chrome Page class
+            self.init_chrome_api(config)
 
-        # read configured panels
-        sites_items = config.items("panels")
-        self.topic_config["panel"]["panels"] = {}
-        for key, panel in sites_items:
-            if key in self.reserved_panel_names:
-                raise RuntimeError(f"Reserved panel name not allowed: {key}")
-            s_list = panel.split("|")
-            if validators.url(s_list[0]) is True:
-                self.topic_config["panel"]["panels"][key.upper()] = panel
-            else:
-                raise RuntimeError(f"Configured URL not well formed: {key}={s_list[0]}")
+            # read configured panels
+            sites_items = config.items("panels")
+            self.topic_config["panel"]["panels"] = {}
+            for key, panel in sites_items:
+                if key in self.reserved_panel_names:
+                    raise RuntimeError(f"Reserved panel name not allowed: {key}")
+                s_list = panel.split("|")
+                if validators.url(s_list[0]) is True:
+                    self.topic_config["panel"]["panels"][key.upper()] = panel
+                else:
+                    raise RuntimeError(f"Configured URL not well formed: {key}={s_list[0]}")
 
-        # read config HADiscovery
-        self.ha_device_name = config["haDiscover"]["deviceName"]
-        self.ha_base = config["haDiscover"]["base"]
+            # read config HADiscovery
+            self.ha_device_name = config["haDiscover"]["deviceName"]
+            self.ha_base = config["haDiscover"]["base"]
 
-        #except (KeyError, RuntimeError) as error:
-        #    LOG.error("Error while reading ini file: %s", error)
-        #    sys.exit()
+        except (KeyError, RuntimeError) as error:
+            LOG.error("Error while reading ini file: %s", error)
+            sys.exit()
 
     def read_default_url(self):
         """
