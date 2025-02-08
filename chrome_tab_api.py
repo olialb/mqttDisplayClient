@@ -120,6 +120,8 @@ class ChromeTabAPI: #pylint: disable=too-many-instance-attributes
         self.page_timeout = timeouts[0]
         self.reload_timeout = timeouts[1]
         self.host = host + str(port)
+        self.tabs_by_id = {}
+        self.tabs_life_counters = {}
         self.clear_registry()
         self.focus_tab = None
         self.focus_reload = 0
@@ -138,7 +140,8 @@ class ChromeTabAPI: #pylint: disable=too-many-instance-attributes
     def set_log(self, level, handler):
         """configure logger"""
         self.log.setLevel(level)
-        self.log.addHandler(handler)
+        if handler is not None:
+            self.log.addHandler(handler)
 
     def tab_count(self):
         """Return number of tabs in registry"""
@@ -167,17 +170,6 @@ class ChromeTabAPI: #pylint: disable=too-many-instance-attributes
 
     def new_tab(self, url):
         """Opens a new tab"""
-        #api_url = self.host + "/json/new?"
-        #try:
-        #    r = requests.put(api_url + url, timeout=REQ_TIMEOUT)
-        #except (TimeoutError, RuntimeError):
-        #    self.log.warning("Request timeout to chrome api!")
-        #    return False
-        #if r.status_code == 200:
-        #    self.sync()
-        #    return True
-        #self.log.info("Could not open new tab: %d", r.status_code)
-        #return False
         err, msg = subprocess.getstatusoutput( CMD_CHROMIUM + url)
         if err != 0:
             self.log.error("Error %s executing command: %s", err, msg)
@@ -216,63 +208,55 @@ class ChromeTabAPI: #pylint: disable=too-many-instance-attributes
     def clear_registry(self):
         """Clear complete tab registry"""
         self.focus_tab = None
-        self.tabs_by_url = {}  # dictionarey with tabs. Key: url, Value id
         self.tabs_by_id = {}  # dictionary with tabs. Key: id, Value: chrome tab
         self.tabs_life_counters = (
             {}
         )  # dictionary with tab life time: Key: Id; Value: Counter (seconds)
 
+    def tabs(self):
+        """returns the currently open tabs"""
+        return self.tabs_by_id
+
+    def active(self):
+        """Returns the active tab"""
+        return self.focus_tab
+
     def register_tab(self, tab):
         """Puts a new tab to the dictionaries"""
-        self.tabs_by_url[tab.url()] = tab.id()
         self.tabs_by_id[tab.id()] = tab
         self.tabs_life_counters[tab.id()] = self.page_timeout
 
     def deregister_tab(self, tab):
         """Removes a new tab from the dictionaries"""
         if tab.id() in self.tabs_by_id:
-            old_url = self.tabs_by_id[tab.id()].url()
             del self.tabs_by_id[tab.id()]
             del self.tabs_life_counters[tab.id()]
-            if old_url in self.tabs_by_url:
-                del self.tabs_by_url[old_url]
 
     def get_tab_by_url(self, url):
         """returns the tab by url from registry"""
-        if url in self.tabs_by_url:
-            return self.tabs_by_id[self.tabs_by_url[url]]
+        for tab in self.tabs_by_id.values():
+            if tab.url() == url:
+                return tab
         return None
 
-    def tab_registered(self, tab):
-        """Check if a tab with this id is already registered"""
-        if tab.id() in self.tabs_by_id:
-            return True
-        return False
-
-    def url_registered(self, tab):
-        """Check if a tab with this url is already registered"""
-        if tab.url() in self.tabs_by_url:
-            return True
-        return False
-
-    def same_url_registered(self, tab):
-        """Check if this tab is registered with the same url"""
-        if self.tab_registered(tab):
-            if tab.url() == self.tabs_by_id[tab.id()].url():
-                return True
-        return False
+    def get_timeout(self, tab):
+        """returns remaining lifetime"""
+        if tab.id() in self.tabs_life_counters:
+            return self.tabs_life_counters[tab.id()]
+        return -1
 
     def set_focus_tab( self, tab ):
         """Defines tha given tab as in focus"""
         if self.focus_tab is not None:
             if self.focus_tab.id() != tab.id():
-                self.focus_tab = tab
                 self.focus_reload = self.reload_timeout
+                self.tabs_life_counters[tab.id()] = self.page_timeout
                 self.log.info("Page in focus: %s", tab.url())
         else:
             self.log.info("New page in focus: %s", tab.url())
-            self.focus_tab = tab
             self.focus_reload = self.reload_timeout
+            self.tabs_life_counters[tab.id()] = self.page_timeout
+        self.focus_tab = tab
 
     def sync(self):
         """
@@ -291,44 +275,20 @@ class ChromeTabAPI: #pylint: disable=too-many-instance-attributes
             if len(tabs) > 0:
                 # first tab in list is currently shown on top. Is focus changed?
                 self.set_focus_tab(ChromeTab(tabs[0]))
+                # create a new dictionarys
+                tabs_by_id = {}
+                tabs_life_counters = {}
                 for tab in tabs:
                     tab = ChromeTab(tab)
-                    if self.tab_registered(tab):
-                        # this tab is already registered. With same url?
-                        if self.same_url_registered(tab):
-                            # same url => nothing to do
-                            self.log.debug("Tab already registered: %s", tab.url())
-                            continue
-                        # tab had previously a different url.
-                        # Is the new url already in dicts for another tab?
-                        if self.url_registered(tab):
-                            # there is another tab with this url
-                            # => dublicated tab => Can be closed
-                            self.close_tab(tab)
-                            self.log.info(
-                                "Tab url changed. Now dublicate url. Close Tab: %s",
-                                tab.url(),
-                            )
-                        else:
-                            # register as tab new
-                            self.register_tab(tab)
-                            self.log.info(
-                                "Tab url changed. Register new: %s", tab.url()
-                            )
+                    tabs_by_id[tab.id()] = tab
+                    if tab.id() not in self.tabs_life_counters:
+                        tabs_life_counters[tab.id()] = self.page_timeout
                     else:
-                        # new tab found. Is a tab with the url already in dicts?
-                        if self.url_registered(tab):
-                            # there is another tab with this url => dublicated url => Can be closed
-                            self.close_tab(tab)
-                            self.log.info(
-                                "Tab with same url exist. Close tab: %s", tab.url()
-                            )
-                        else:
-                            # new url => Register tab
-                            self.register_tab(tab)
-                            self.log.info(
-                                "New tab with new url. Register tab: %s", tab.url()
-                            )
+                        tabs_life_counters[tab.id()] = self.tabs_life_counters[tab.id()]
+                #replace the old dicts with new one
+                self.tabs_by_id = tabs_by_id
+                self.tabs_life_counters = tabs_life_counters
+                self.sync_error = False
             else:
                 # No open tabs returned
                 self.clear_registry()

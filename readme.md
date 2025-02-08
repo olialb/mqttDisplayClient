@@ -134,6 +134,9 @@ This is the main configuration section. This is the only section where you need 
 Configuration of the python logger which is used to log events
 
 * *level*= configuration of the logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL)
+* *path=*" path to the log files
+* *file=*" filename of the log file. If empty, logging in files is disabled
+* *chromeTopc=* With *True* can be a special logging topic be enabled which shows the chrome tabs, which are curently open
   
 #### Section **[feature]**
 Section to enable and diable additional features

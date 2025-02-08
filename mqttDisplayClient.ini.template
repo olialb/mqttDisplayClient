@@ -43,6 +43,8 @@ level=WARNING
 path=log
 #log file name
 file=mqttDisplayClient.log
+#special debug topic can be enabled to see the status of the chrome tabs
+chromeTopic=false
 
 [feature]
 #enable display control with pyautogui. Allowed values (enabled/disabled)
@@ -69,9 +71,9 @@ get=cat /sys/class/backlight/{displayID}/bl_power
 [chrome]
 #port for chrome DevTools API (add chrome command line flag: --remote-debugging-port=9222)
 port=9222
-#After this timeout in seconds a page in the backgound is closed (0 is dispabled)
+#After this timeout in seconds a page in the backgound is closed (0 is dispabled). Default 600.
 pageTimeout=600
-#After this timeout in seconds the page in the foreground is reloaded (0 is dispabled)
+#After this timeout in seconds the page in the foreground is reloaded (0 is dispabled). Default 3600.
 reloadTimeout=3600
 
 [panels]

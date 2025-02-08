@@ -63,6 +63,7 @@ class HADiscovery:
         value_template=None,
         device_class=None,
         unit=None,
+        icon=None
     ):
         """json content of a sensor"""
         uid = self.uid
@@ -77,6 +78,8 @@ class HADiscovery:
             js["value_template"] = "{{ value_json." + value_template + " }}"
         if device_class is not None:
             js["device_class"] = device_class
+        if icon is not None:
+            js['icon'] = "mdi:"+icon
         js["device"] = self.device()
         return topic, json.dumps(js)
 

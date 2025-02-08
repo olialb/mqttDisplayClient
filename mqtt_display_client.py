@@ -41,7 +41,6 @@ from chrome_tab_api import ChromeTabAPI
 #
 # global constants
 #
-SWVERSION = "V0.1"
 CONFIG_FILE = "mqttDisplayClient.ini"  # name of the ini file
 PANEL_DEFAULT = (
     "DEFAULT"  # keyword to set the website back to the configured FullPageOS default
@@ -55,7 +54,7 @@ IDLE = ">_"
 LOG_ROTATE_WHEN='midnight'
 LOG_BACKUP_COUNT=5
 LOG_FILE_PATH="log"
-LOG_FILE_NAME='mqttDisplayClient.log'
+LOG_FILE_NAME=None
 LOG_FILE_HANDLER = None
 #
 # initialize logger
@@ -97,19 +96,20 @@ try:
     except OSError:
         LOG.error( "Can not create Logging directory: ./%s", LOG_FILE_PATH )
 
-    #create time rotating logger for log files
-    LOG_FILE_HANDLER = logging.handlers.TimedRotatingFileHandler(
-        os.path.join(LOG_FILE_PATH,LOG_FILE_NAME),
-        when=LOG_ROTATE_WHEN,
-        backupCount=LOG_BACKUP_COUNT
+    if LOG_FILE_NAME is not None and LOG_FILE_NAME != "":
+        #create time rotating logger for log files
+        LOG_FILE_HANDLER = logging.handlers.TimedRotatingFileHandler(
+            os.path.join(LOG_FILE_PATH,LOG_FILE_NAME),
+            when=LOG_ROTATE_WHEN,
+            backupCount=LOG_BACKUP_COUNT
+            )
+        # Set the formatter for the logging handler
+        LOG_FILE_HANDLER.setFormatter(
+            logging.Formatter('%(asctime)s-%(name)s-%(levelname)s-%(message)s')
         )
-    # Set the formatter for the logging handler
-    LOG_FILE_HANDLER.setFormatter(
-        logging.Formatter('%(asctime)s-%(name)s-%(levelname)s-%(message)s')
-    )
-    LOG.addHandler( LOG_FILE_HANDLER )
+        LOG.addHandler( LOG_FILE_HANDLER )
 
-    # read features status
+        # read features status
     BACKLIGHT = False
     if "backlight" in FEATURE_CFG["feature"]:
         if FEATURE_CFG["feature"]["backlight"].upper() == "ENABLED":
@@ -220,6 +220,7 @@ class MqttDisplayClient: # pylint: disable=too-many-instance-attributes
                 "publish": self._publish_autogui_results,
                 "set": self._set_autogui,
             },
+            "chrome": {"topic": "chrome", "publish": self._publish_chrome},
         }
         #read the ini file
         self.read_config_file()
@@ -294,12 +295,16 @@ class MqttDisplayClient: # pylint: disable=too-many-instance-attributes
 
             # read config system commands
             self.topic_config["shell"]["commands"] = {}
-            cmd_items = config.items("shellCommands")
-            for key, cmd in cmd_items:
+            for key, cmd in config.items("shellCommands"):
                 self.topic_config["shell"]["commands"][key.upper()] = cmd
 
             #create chrome Page class
             self.init_chrome_api(config)
+
+            #check if special chrome topic should be enabled
+            self.chrome_topic = False
+            if 'chromeTopic' in config["logging"]:
+                self.chrome_topic = config["logging"]["chromeTopic"]
 
             # read configured panels
             sites_items = config.items("panels")
@@ -658,6 +663,37 @@ class MqttDisplayClient: # pylint: disable=too-many-instance-attributes
         else:
             LOG.error("Failed to send message to topic %s", topic)
 
+    def _publish_chrome(self, topic, my_config): # pylint: disable=unused-argument
+        """
+        publish the chrome topic
+        """
+        #check if chrome topic is enabled
+        if self.chrome_topic is not True:
+            return
+        # collect system info
+        chrome = {}
+        active = self.chrome_pages.active()
+        chrome ["active_id"] = active.id()
+        chrome ["active_url"] = active.url()
+        chrome ["reload"] = self.chrome_pages.focus_reload
+        tabs = self.chrome_pages.tabs()
+        chrome["tabs"] = {}
+        for t_id, tab in tabs.items():
+            jt = {}
+            jt["url"] = tab.url()
+            jt["timeout"] = self.chrome_pages.get_timeout(tab)
+            chrome["tabs"][t_id] = jt
+        # create a json out of it
+        msg = json.dumps(chrome)
+        # send message to broker
+        result = self.client.publish(topic, msg)
+        # result: [0, 1]
+        status = result[0]
+        if status == 0:
+            LOG.debug("Send '%s' to topic %s", msg, topic)
+        else:
+            LOG.error("Failed to send message to topic %s", topic)
+
     def _publish_brightness(self, topic, my_config):
         """
         publish the brightness topic
@@ -828,20 +864,29 @@ class MqttDisplayClient: # pylint: disable=too-many-instance-attributes
             "cpu_temp",
             "temperature",
             "°C",
+            icon="cpu-64-bit"
         )
         self._ha_publish(topic, payload)
 
         # chrome tabs
-        topic, payload = ha.sensor("Active chrome tabs", self.topic_root + "/system", "chrome_tabs")
+        topic, payload = ha.sensor("Active chrome tabs",
+                                   self.topic_root + "/system",
+                                   "chrome_tabs",
+                                   icon="monitor-dashboard"
+                                   )
         self._ha_publish(topic, payload)
 
         # cpu load
-        topic, payload = ha.sensor("cpu load", self.topic_root + "/system", "cpu_load")
+        topic, payload = ha.sensor("cpu load",
+                                   self.topic_root + "/system",
+                                   "cpu_load",
+                                   icon="cpu-64-bit"
+                                   )
         self._ha_publish(topic, payload)
 
         # disk usage
         topic, payload = ha.sensor(
-            "disk usage", self.topic_root + "/system", "disk_usage", "battery", "%"
+            "disk usage", self.topic_root + "/system", "disk_usage", icon="harddisk", unit="%"
         )
         self._ha_publish(topic, payload)
 
@@ -875,12 +920,12 @@ class MqttDisplayClient: # pylint: disable=too-many-instance-attributes
         if PYAUTOGUI is True:
             # mouse x position
             topic, payload = ha.sensor(
-                "Mouse X Pos", self.topic_root + "/system", "mouse_position[0]"
+                "Mouse X Pos", self.topic_root + "/system", "mouse_position[0]", icon="mouse"
             )
             self._ha_publish(topic, payload)
             # mouse y position
             topic, payload = ha.sensor(
-                "Mouse Y Pos", self.topic_root + "/system", "mouse_position[1]"
+                "Mouse Y Pos", self.topic_root + "/system", "mouse_position[1]", icon="mouse"
             )
             self._ha_publish(topic, payload)
             # autogui command string

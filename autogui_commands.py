@@ -44,7 +44,8 @@ def autogui_log(level, handler):
     set the log level of the module
     """
     LOG.setLevel(level)
-    LOG.addHandler( handler )
+    if handler is not None:
+        LOG.addHandler( handler )
 
 
 #########################
