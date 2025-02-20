@@ -1,4 +1,5 @@
 # python
+# pylint: disable=consider-using-f-string, R0801
 #
 # This file is part of the mqttDisplayClient distribution
 # (https://github.com/olialb/mqttDisplayClient).
@@ -26,50 +27,48 @@ pyautogui is used to make screenshots of the screen content
 """
 
 import configparser
-#import logging
-#import logging.handlers
+
 import time
 import json
 import subprocess
-#import threading
+
+# import threading
 import os
 import glob
-#import signal
+
+# import signal
 import sys
 
 # used to validate URLs:
-#import validators
 import gpiozero
 from paho.mqtt import client as mqtt_client
-#from ha_discover import HADiscovery
 
-#import py autogui $DISPLAY must be set
+# from ha_discover import HADiscovery
+
+# import py autogui $DISPLAY must be set
 os.environ["DISPLAY"] = ":0"  # environment variable needed for pyautogui
-import pyautogui
+import pyautogui # pylint: disable=wrong-import-position
 
-#import test object
+# import test object
 sys.path.append(os.path.abspath("./"))
-import mqtt_display_client as MDC
+import mqtt_display_client as MDC # pylint: disable=wrong-import-position
 
 #
 # global constants
 #
 WAIT_FOR_URL_LOADED = 3
-#
-# initialize logger
-#
-#LOG = logging.getLogger("MQTTClient")
-#logging.basicConfig()
 
 #
 # define test client
 #
-class TestMqttDisplayClient:
+class TestMqttDisplayClient: # pylint: disable=too-many-instance-attributes
     """
     Main class of MQTT display client for FullPageOS
     """
-    #prevent pytest to collect somthing from this class
+
+    # prevent pytest to collect somthing from this class
     __test__ = False
+
     def __init__(self, config_file):
         """
         Constructor takes config file as parameter (ini file) and defines global atrributes
@@ -93,8 +92,12 @@ class TestMqttDisplayClient:
         self.reserved_panel_names = [MDC.PANEL_DEFAULT, MDC.PANEL_SHOW_URL]
         self.shell_cmd = MDC.IDLE
         self.published_shell_cmd = None
-        
-        #connection state
+        self.default_url_file = None
+        self.device_name = None
+        self.ha_device_name = None
+        self.ha_base = None
+
+        # connection state
         self.connected = False
         self.offline = True
 
@@ -109,7 +112,7 @@ class TestMqttDisplayClient:
 
         # topic data
         self.topic_data = {}
-        
+
     def read_config_file(self):
         """
         Reads the configured ini file and sets attributes based on the config
@@ -165,7 +168,6 @@ class TestMqttDisplayClient:
             for key, panel in sites_items:
                 if key in self.reserved_panel_names:
                     raise RuntimeError(f"Reserved panel name not allowed: {key}")
-                s_list = panel.split("|")
                 self.topic_config["panel"]["panels"][key.upper()] = panel
 
             # read config HADiscovery
@@ -190,7 +192,9 @@ class TestMqttDisplayClient:
             sys.exit()
 
     @classmethod
-    def on_connect(cls, client, inst, flags, rc, properties): # pylint: disable=too-many-positional-arguments,too-many-arguments,unused-argument
+    def on_connect(
+        cls, client, inst, flags, rc, properties
+    ):  # pylint: disable=too-many-positional-arguments,too-many-arguments,unused-argument
         """
         method is colled when the mqtt client connects to the broker
         """
@@ -203,7 +207,9 @@ class TestMqttDisplayClient:
             print("Failed to connect, return code %s" % rc)
 
     @classmethod
-    def on_disconnect(cls, client, inst, flags, rc, properties): # pylint: disable=too-many-positional-arguments,too-many-arguments,unused-argument
+    def on_disconnect(
+        cls, client, inst, flags, rc, properties
+    ):  # pylint: disable=too-many-positional-arguments,too-many-arguments,unused-argument
         """
         method is called when the mqtt client disconnects from the server
         """
@@ -221,7 +227,7 @@ class TestMqttDisplayClient:
                 print("%s. Reconnect failed. Retrying..." % err)
 
     @classmethod
-    def on_message(cls, client, inst, msg): # pylint: disable=unused-argument
+    def on_message(cls, client, inst, msg):  # pylint: disable=unused-argument
         """
         method is called when the cleint receives a message from the broker
         """
@@ -247,10 +253,8 @@ class TestMqttDisplayClient:
                 self.client.connect(self.broker, self.port)
             except OSError as error:
                 print(
-                    "Error while connect to server %s:%s: %s" %
-                    (self.broker,
-                    self.port,
-                    error)
+                    "Error while connect to server %s:%s: %s"
+                    % (self.broker, self.port, error)
                 )
                 time.sleep(self.reconnect_delay)
                 continue
@@ -260,7 +264,7 @@ class TestMqttDisplayClient:
 
         # start main loop of mqtt client
         self.client.loop_start()
-        
+
     def disconnect(self):
         """
         Disconnect from broker
@@ -281,34 +285,37 @@ class TestMqttDisplayClient:
                 print("Subscribe to: %s" % topic)
         self.client.on_message = TestMqttDisplayClient.on_message
 
-    def get_data( self, topic ):
+    def get_data(self, topic):
         """
         returns data which was received for this topic or None
         """
-        topic = self.topic_root+'/'+topic
+        topic = self.topic_root + "/" + topic
         if topic in self.topic_data:
             return self.topic_data[topic]
         return None
-    
-    def wait_for_data( self, topic, data):
+
+    def wait_for_data(self, topic, data):
         """
         wait that a topic has a specific content
         """
-        topic = self.topic_root+'/'+topic
-        count=0
-        topic_data=None
-        while topic_data != data and count < (self.full_publish_cycle*self.publish_delay)+2:
-            count +=1
+        topic = self.topic_root + "/" + topic
+        count = 0
+        topic_data = None
+        while (
+            topic_data != data
+            and count < (self.full_publish_cycle * self.publish_delay) + 2
+        ):
+            count += 1
             time.sleep(1)
             if topic in self.topic_data:
                 topic_data = self.topic_data[topic]
         return topic_data == data
-    
+
     def send_cmd(self, topic, msg):
         """
         Sends a message to a command topic
         """
-        topic = self.topic_root+'/'+topic+'/set'
+        topic = self.topic_root + "/" + topic + "/set"
         result = self.client.publish(topic, msg)
         # result: [0, 1]
         status = result[0]
@@ -316,6 +323,7 @@ class TestMqttDisplayClient:
             print("Failed to send message to topic %s" % topic)
 
     def get_backlight_status(self):
+        """Returns the current backlight status"""
         err, msg = subprocess.getstatusoutput(
             self.topic_config["backlight"]["get"].format(displayID=self.display_id)
         )
@@ -326,8 +334,9 @@ class TestMqttDisplayClient:
                 return "ON"
             return "OFF"
         return None
-        
+
     def get_brightness(self):
+        """Returns the current backlight brightness"""
         err, msg = subprocess.getstatusoutput(
             self.topic_config["brightness"]["get"].format(displayID=self.display_id)
         )
@@ -336,16 +345,17 @@ class TestMqttDisplayClient:
             bmax = self.topic_config["brightness"]["max"]
             return int(float(msg) * (100 / (bmax - bmin)))
         return None
-    
+
     def calc_brightness(self, percent):
+        """Calculate the brightness value based on min/max"""
         bmin = self.topic_config["brightness"]["min"]
         bmax = self.topic_config["brightness"]["max"]
         value = int((float(percent)) / (100 / (bmax - bmin))) + bmin
-        value = min(bmax, max( bmin, value ))
+        value = min(bmax, max(bmin, value))
         return int(float(value) * (100 / (bmax - bmin)))
- 
-        
-DUMMY_CLIENT = MDC.MqttDisplayClient( MDC.CONFIG_FILE )
+
+
+DUMMY_CLIENT = MDC.MqttDisplayClient(MDC.CONFIG_FILE)
 
 TST_CLIENT = TestMqttDisplayClient(MDC.CONFIG_FILE)
 TST_CLIENT.topic_config = DUMMY_CLIENT.topic_config
@@ -358,234 +368,356 @@ TST_CLIENT.connect()
 # test case section
 #
 
+
 #
 # Test preparation...
 #
 def test_ini_file_exits():
+    """Test if ini files exist"""
     assert os.path.exists(MDC.CONFIG_FILE) is not False
-    
+
+
 # import from the configuration file only the feature configuraion
 FEATURE_CFG = configparser.ConfigParser()
 
-def test_ini_file_can_be_read(): 
+
+def test_ini_file_can_be_read():
+    """Test if the ini file can be read"""
     FEATURE_CFG.read(MDC.CONFIG_FILE)
+
 
 # read ini file values
 def test_ini_log_level():
+    """Test if the log level is valid"""
     # read logging config
-    LOG_LEVEL = FEATURE_CFG["logging"]["level"]
-    assert LOG_LEVEL.upper() in ['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL']
+    log_level = FEATURE_CFG["logging"]["level"]
+    assert log_level.upper() in ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
 
 
 def test_default_url():
+    """check if the default url is correct"""
     assert DUMMY_CLIENT.default_url == TST_CLIENT.default_url
 
+
 def test_wait_connect_broker():
-    count=0
+    """Wait for connection to broker"""
+    count = 0
     while TST_CLIENT.connected is False and count <= 5:
         time.sleep(1)
         count += 1
-        print ("Wait connect to broker..." )
+        print("Wait connect to broker...")
     assert TST_CLIENT.connected is True
-    
+
+
 def test_test_object_connected():
-    count=0
-    data=None
-    while data is None and count <= TST_CLIENT.publish_delay*2:
+    """Test if a test client is connected"""
+    count = 0
+    data = None
+    while data is None and count <= TST_CLIENT.publish_delay * 2:
         print(TST_CLIENT.topic_data)
-        data = TST_CLIENT.get_data('system')
+        data = TST_CLIENT.get_data("system")
         time.sleep(1)
-        count+=1
-    assert data != None, "No data received! mqttDisplayClient not running?"
+        count += 1
+    assert data is not None, "No data received! mqttDisplayClient not running?"
+
 
 def test_delete_old_screenshots():
-    for screenshot in glob.glob('tst_*.png'):
+    """Delete the screen shots from previous test runs"""
+    for screenshot in glob.glob("tst_*.png"):
         os.remove(screenshot)
+
+
 #
 # Everything is prepared
 # Functional testing standard features...
 #
 def test_start_screen():
-    pyautogui.screenshot( 'tst_start.png')
+    """Make screen shot before testing"""
+    pyautogui.screenshot("tst_start.png")
+
 
 def test_system_content_basic():
-    data = json.loads(TST_CLIENT.get_data('system'))
-    assert 'cpu_temp' in data
-    cpu_temp = float(data['cpu_temp'])
+    """Test the general content of system topic"""
+    data = json.loads(TST_CLIENT.get_data("system"))
+    assert "cpu_temp" in data
+    cpu_temp = float(data["cpu_temp"])
     ct = gpiozero.CPUTemperature().temperature
-    assert cpu_temp*0.9 < ct and cpu_temp*1.1 > ct, "Strange cpu temperature received"
-    assert 'cpu_load' in data
-    cpu_load = float(data['cpu_load'])
+    assert (
+        cpu_temp * 0.9 < ct < cpu_temp * 1.1
+    ), "Strange cpu temperature received"
+    assert "cpu_load" in data
+    cpu_load = float(data["cpu_load"])
     cl = gpiozero.LoadAverage().load_average * 100
-    assert cpu_load*0.9 < cl and cpu_load*1.1 > cl, "Strange cpu load received"
-    assert 'disk_usage' in data
-    disk_usage = float(data['disk_usage'])
+    assert cpu_load * 0.9 < cl < cpu_load * 1.1, "Strange cpu load received"
+    assert "disk_usage" in data
+    disk_usage = float(data["disk_usage"])
     du = gpiozero.DiskUsage().usage
-    assert disk_usage*0.9 < du and disk_usage*1.1 > du, "Strange disk_usage received"
-    assert 'default_url' in data
-    assert data['default_url'] == TST_CLIENT.default_url.strip()
+    assert (
+        disk_usage * 0.9 < du < disk_usage * 1.1
+    ), "Strange disk_usage received"
+    assert "default_url" in data
+    assert data["default_url"] == TST_CLIENT.default_url.strip()
+
 
 def test_shell_content():
-    assert TST_CLIENT.wait_for_data( 'shell', MDC.IDLE), "Shell contains no idle content"
+    """Test the content of shell topic"""
+    assert TST_CLIENT.wait_for_data("shell", MDC.IDLE), "Shell contains no idle content"
+
 
 def test_shell_command():
-    #cleanup test file:
-    if os.path.isfile ('test.txt'):
-        os.remove('test.txt')
-    TST_CLIENT.send_cmd('shell', 'Test') #send special test command
-    assert TST_CLIENT.wait_for_data('shell', 'Test'), "Test command not excecuted. Is it configured in ini file?"
-    assert os.path.isfile ('test.txt'), "test file not created"
-    assert TST_CLIENT.wait_for_data( 'shell', MDC.IDLE), "shell not returning to idle content"
-    assert not os.path.isfile ('test.txt'), "test file not deleted"
+    """Test a shell comand"""
+    # cleanup test file:
+    if os.path.isfile("test.txt"):
+        os.remove("test.txt")
+    TST_CLIENT.send_cmd("shell", "Test")  # send special test command
+    assert TST_CLIENT.wait_for_data(
+        "shell", "Test"
+    ), "Test command not excecuted. Is it configured in ini file?"
+    assert os.path.isfile("test.txt"), "test file not created"
+    assert TST_CLIENT.wait_for_data(
+        "shell", MDC.IDLE
+    ), "shell not returning to idle content"
+    assert not os.path.isfile("test.txt"), "test file not deleted"
+
 
 def test_set_url():
-    TST_CLIENT.send_cmd('url', 'https://www.google.com/')
-    assert TST_CLIENT.wait_for_data( 'url', 'https://www.google.com/' )
-    assert TST_CLIENT.wait_for_data( 'panel', MDC.PANEL_SHOW_URL.capitalize()), "Panel does not switch to URL"
+    """Test the url topic"""
+    TST_CLIENT.send_cmd("url", "https://www.google.com/")
+    assert TST_CLIENT.wait_for_data("url", "https://www.google.com/")
+    assert TST_CLIENT.wait_for_data(
+        "panel", MDC.PANEL_SHOW_URL.capitalize()
+    ), "Panel does not switch to URL"
     time.sleep(WAIT_FOR_URL_LOADED)
-    pyautogui.screenshot( 'tst_google1.png')
-    
+    pyautogui.screenshot("tst_google1.png")
+
+
 def test_set_default():
-    TST_CLIENT.send_cmd('panel', MDC.PANEL_DEFAULT)
-    assert TST_CLIENT.wait_for_data( 'panel', MDC.PANEL_DEFAULT.capitalize()), "Panel does not switch to DEFAULT"
-    assert TST_CLIENT.wait_for_data( 'url', TST_CLIENT.default_url.strip() )
+    """Test to set defaut url"""
+    TST_CLIENT.send_cmd("panel", MDC.PANEL_DEFAULT)
+    assert TST_CLIENT.wait_for_data(
+        "panel", MDC.PANEL_DEFAULT.capitalize()
+    ), "Panel does not switch to DEFAULT"
+    assert TST_CLIENT.wait_for_data("url", TST_CLIENT.default_url.strip())
     time.sleep(WAIT_FOR_URL_LOADED)
-    pyautogui.screenshot( 'tst_default1.png')
+    pyautogui.screenshot("tst_default1.png")
+
 
 def test_set_configured_panels():
-    for panel, url in TST_CLIENT.topic_config['panel']['panels'].items():
-        TST_CLIENT.send_cmd('panel', panel)
-        assert TST_CLIENT.wait_for_data( 'panel', panel.capitalize()), "Panel does not switch"
-        url = url.split('|')[0].strip()
-        assert TST_CLIENT.wait_for_data( 'url', url )
+    """Test all configured panels"""
+    for panel, url in TST_CLIENT.topic_config["panel"]["panels"].items():
+        TST_CLIENT.send_cmd("panel", panel)
+        assert TST_CLIENT.wait_for_data(
+            "panel", panel.capitalize()
+        ), "Panel does not switch"
+        url = url.split("|")[0].strip()
+        assert TST_CLIENT.wait_for_data("url", url)
         time.sleep(WAIT_FOR_URL_LOADED)
-        pyautogui.screenshot( 'tst_'+panel.lower()+'.png')
+        pyautogui.screenshot("tst_" + panel.lower() + ".png")
+
 
 def test_blank_page():
-    TST_CLIENT.send_cmd('panel', MDC.PANEL_BLANK)
-    assert TST_CLIENT.wait_for_data( 'panel', MDC.PANEL_BLANK.capitalize()), "Panel does not switch to BLANK"
-    assert TST_CLIENT.wait_for_data( 'url', MDC.PANEL_BLANK_URL )
+    """Test a blank page"""
+    TST_CLIENT.send_cmd("panel", MDC.PANEL_BLANK)
+    assert TST_CLIENT.wait_for_data(
+        "panel", MDC.PANEL_BLANK.capitalize()
+    ), "Panel does not switch to BLANK"
+    assert TST_CLIENT.wait_for_data("url", MDC.PANEL_BLANK_URL)
     time.sleep(WAIT_FOR_URL_LOADED)
-    pyautogui.screenshot( 'tst_blank_page.png')
+    pyautogui.screenshot("tst_blank_page.png")
+
 
 def test_set_url_back():
-    TST_CLIENT.send_cmd('panel', MDC.PANEL_SHOW_URL)
-    assert TST_CLIENT.wait_for_data( 'url', 'https://www.google.com/' )
-    assert TST_CLIENT.wait_for_data( 'panel', MDC.PANEL_SHOW_URL.capitalize()), "Panel does not switch"
+    """Test to set back to configured url"""
+    TST_CLIENT.send_cmd("panel", MDC.PANEL_SHOW_URL)
+    assert TST_CLIENT.wait_for_data("url", "https://www.google.com/")
+    assert TST_CLIENT.wait_for_data(
+        "panel", MDC.PANEL_SHOW_URL.capitalize()
+    ), "Panel does not switch"
     time.sleep(WAIT_FOR_URL_LOADED)
-    pyautogui.screenshot( 'tst_google2.png')
+    pyautogui.screenshot("tst_google2.png")
+
 
 #
 # Test backlight features:
 #
 def test_backlight_status():
-    TST_CLIENT.send_cmd('backlight', "OFF")
-    assert TST_CLIENT.wait_for_data( 'backlight', "OFF"), "backlight  does not switch off"
-    assert TST_CLIENT.get_backlight_status() == 'OFF'
-    TST_CLIENT.send_cmd('backlight', "ON")
-    assert TST_CLIENT.wait_for_data( 'backlight', "ON"), "backlight does not switch on"
-    assert TST_CLIENT.get_backlight_status() == 'ON'
+    """Test backlight status ON/OFF"""
+    TST_CLIENT.send_cmd("backlight", "OFF")
+    assert TST_CLIENT.wait_for_data(
+        "backlight", "OFF"
+    ), "backlight  does not switch off"
+    assert TST_CLIENT.get_backlight_status() == "OFF"
+    TST_CLIENT.send_cmd("backlight", "ON")
+    assert TST_CLIENT.wait_for_data("backlight", "ON"), "backlight does not switch on"
+    assert TST_CLIENT.get_backlight_status() == "ON"
+
 
 def test_brightness():
-    TST_CLIENT.send_cmd('brightness_percent', "0")
-    assert TST_CLIENT.wait_for_data( 'brightness_percent', str(TST_CLIENT.calc_brightness(0)))
+    """Test backlight brightness"""
+    TST_CLIENT.send_cmd("brightness_percent", "0")
+    assert TST_CLIENT.wait_for_data(
+        "brightness_percent", str(TST_CLIENT.calc_brightness(0))
+    )
     assert TST_CLIENT.get_brightness() == TST_CLIENT.calc_brightness(0)
-    TST_CLIENT.send_cmd('brightness_percent', "100")
-    assert TST_CLIENT.wait_for_data( 'brightness_percent', str(TST_CLIENT.calc_brightness(100)))
+    TST_CLIENT.send_cmd("brightness_percent", "100")
+    assert TST_CLIENT.wait_for_data(
+        "brightness_percent", str(TST_CLIENT.calc_brightness(100))
+    )
     assert TST_CLIENT.get_brightness() == TST_CLIENT.calc_brightness(100)
-    TST_CLIENT.send_cmd('brightness_percent', "-1")
-    assert TST_CLIENT.wait_for_data( 'brightness_percent', str(TST_CLIENT.calc_brightness(0)))
+    TST_CLIENT.send_cmd("brightness_percent", "-1")
+    assert TST_CLIENT.wait_for_data(
+        "brightness_percent", str(TST_CLIENT.calc_brightness(0))
+    )
     assert TST_CLIENT.get_brightness() == TST_CLIENT.calc_brightness(0)
-    TST_CLIENT.send_cmd('brightness_percent', "200")
-    assert TST_CLIENT.wait_for_data( 'brightness_percent', str(TST_CLIENT.calc_brightness(100)))
+    TST_CLIENT.send_cmd("brightness_percent", "200")
+    assert TST_CLIENT.wait_for_data(
+        "brightness_percent", str(TST_CLIENT.calc_brightness(100))
+    )
     assert TST_CLIENT.get_brightness() == TST_CLIENT.calc_brightness(100)
-    TST_CLIENT.send_cmd('brightness_percent', "50")
-    assert TST_CLIENT.wait_for_data( 'brightness_percent', str(TST_CLIENT.calc_brightness(50)))
+    TST_CLIENT.send_cmd("brightness_percent", "50")
+    assert TST_CLIENT.wait_for_data(
+        "brightness_percent", str(TST_CLIENT.calc_brightness(50))
+    )
     assert TST_CLIENT.get_brightness() == TST_CLIENT.calc_brightness(50)
-#    
+
+
+#
 # Test autogui features
 #
 def test_system_content_autogui():
-    data = json.loads(TST_CLIENT.get_data('system'))
-    assert 'mouse_position' in data
+    """Test system topic content for feature autogui"""
+    data = json.loads(TST_CLIENT.get_data("system"))
+    assert "mouse_position" in data
     pos = pyautogui.position()
-    assert data['mouse_position'][0] == pos[0] and data['mouse_position'][1] == pos[1]
-    assert 'display_size' in data
+    assert data["mouse_position"][0] == pos[0] and data["mouse_position"][1] == pos[1]
+    assert "display_size" in data
     size = pyautogui.size()
-    assert data['display_size'][0] == size[0] and data['display_size'][1] == size[1]
+    assert data["display_size"][0] == size[0] and data["display_size"][1] == size[1]
+
 
 def test_autogui_wrong_syntax_01():
-    TST_CLIENT.send_cmd('autogui', "test")
-    assert TST_CLIENT.wait_for_data( 'autogui', "Unknown command: 'test'")
+    """Test syntax of autogui commands"""
+    TST_CLIENT.send_cmd("autogui", "test")
+    assert TST_CLIENT.wait_for_data("autogui", "Unknown command: 'test'")
+
 
 def test_autogui_wrong_syntax_02():
-    TST_CLIENT.send_cmd('autogui', "test_()")
-    assert TST_CLIENT.wait_for_data( 'autogui', "Unknown command: 'test_'")
+    """Test syntax of autogui commands"""
+    TST_CLIENT.send_cmd("autogui", "test_()")
+    assert TST_CLIENT.wait_for_data("autogui", "Unknown command: 'test_'")
+
 
 def test_autogui_wrong_syntax_03():
-    TST_CLIENT.send_cmd('autogui', "scroll()")
-    assert TST_CLIENT.wait_for_data( 'autogui', "Unknown command: 'scroll'")
+    """Test syntax of autogui commands"""
+    TST_CLIENT.send_cmd("autogui", "scroll()")
+    assert TST_CLIENT.wait_for_data("autogui", "Unknown command: 'scroll'")
+
 
 def test_autogui_wrong_syntax_04():
-    TST_CLIENT.send_cmd('autogui', "test(;")
-    assert TST_CLIENT.wait_for_data( 'autogui', "Error missing closing bracket: 'test':OK. Stop.")
+    """Test syntax of autogui commands"""
+    TST_CLIENT.send_cmd("autogui", "test(;")
+    assert TST_CLIENT.wait_for_data(
+        "autogui", "Error missing closing bracket: 'test':OK. Stop."
+    )
+
 
 def test_autogui_wrong_syntax_05():
-    TST_CLIENT.send_cmd('autogui', "test(")
-    assert TST_CLIENT.wait_for_data( 'autogui', "Syntax error with command. Unterminated string: 'test()'")
+    """Test syntax of autogui commands"""
+    TST_CLIENT.send_cmd("autogui", "test(")
+    assert TST_CLIENT.wait_for_data(
+        "autogui", "Syntax error with command. Unterminated string: 'test()'"
+    )
+
 
 def test_autogui_wrong_syntax_06():
-    TST_CLIENT.send_cmd('autogui', "scroll(5);test(;scroll(2)")
-    assert TST_CLIENT.wait_for_data( 'autogui', "Error missing closing bracket: 'test':OK. Stop.")
+    """Test syntax of autogui commands"""
+    TST_CLIENT.send_cmd("autogui", "scroll(5);test(;scroll(2)")
+    assert TST_CLIENT.wait_for_data(
+        "autogui", "Error missing closing bracket: 'test':OK. Stop."
+    )
+
 
 def test_autogui_wrong_syntax_07():
-    TST_CLIENT.send_cmd('autogui', "test-")
-    assert TST_CLIENT.wait_for_data( 'autogui', "Not allowed character in command name: 'test-'. Stop.")
+    """Test syntax of autogui commands"""
+    TST_CLIENT.send_cmd("autogui", "test-")
+    assert TST_CLIENT.wait_for_data(
+        "autogui", "Not allowed character in command name: 'test-'. Stop."
+    )
+
 
 def test_autogui_wrong_syntax_08():
-    TST_CLIENT.send_cmd('autogui', "scroll(5),")
-    assert TST_CLIENT.wait_for_data( 'autogui', "Wrong character after: 'scroll(5),'. Stop.")
+    """Test syntax of autogui commands"""
+    TST_CLIENT.send_cmd("autogui", "scroll(5),")
+    assert TST_CLIENT.wait_for_data(
+        "autogui", "Wrong character after: 'scroll(5),'. Stop."
+    )
+
 
 def test_autogui_wrong_syntax_09():
-    TST_CLIENT.send_cmd('autogui', "test'")
-    assert TST_CLIENT.wait_for_data( 'autogui', "Syntax error. Character ' is not allowed here: test().")
+    """Test syntax of autogui commands"""
+    TST_CLIENT.send_cmd("autogui", "test'")
+    assert TST_CLIENT.wait_for_data(
+        "autogui", "Syntax error. Character ' is not allowed here: test()."
+    )
+
 
 def test_autogui_wrong_syntax_10():
-    TST_CLIENT.send_cmd('autogui', "scroll(5)  +")
-    assert TST_CLIENT.wait_for_data( 'autogui', "Wrong character after: 'scroll(5)+'. Stop.")
+    """Test syntax of autogui commands"""
+    TST_CLIENT.send_cmd("autogui", "scroll(5)  +")
+    assert TST_CLIENT.wait_for_data(
+        "autogui", "Wrong character after: 'scroll(5)+'. Stop."
+    )
+
 
 def test_autogui_wrong_syntax_11():
-    TST_CLIENT.send_cmd('autogui', 'test"')
-    assert TST_CLIENT.wait_for_data( 'autogui', 'Syntax error. Character " is not allowed here: test().')
+    """Test syntax of autogui commands"""
+    TST_CLIENT.send_cmd("autogui", 'test"')
+    assert TST_CLIENT.wait_for_data(
+        "autogui", 'Syntax error. Character " is not allowed here: test().'
+    )
+
 
 def test_autogui_wrong_syntax_12():
-    TST_CLIENT.send_cmd('autogui', "test(\\")
-    assert TST_CLIENT.wait_for_data( 'autogui', "Esc char outside strings not allowed: 'test()'.")
+    """Test syntax of autogui commands"""
+    TST_CLIENT.send_cmd("autogui", "test(\\")
+    assert TST_CLIENT.wait_for_data(
+        "autogui", "Esc char outside strings not allowed: 'test()'."
+    )
+
 
 def test_autogui_wrong_syntax_13():
-    TST_CLIENT.send_cmd('autogui', "test\\")
-    assert TST_CLIENT.wait_for_data( 'autogui', "Esc char outside strings not allowed: 'test'.")
- 
+    """Test syntax of autogui commands"""
+    TST_CLIENT.send_cmd("autogui", "test\\")
+    assert TST_CLIENT.wait_for_data(
+        "autogui", "Esc char outside strings not allowed: 'test'."
+    )
+
+
 def test_autogui_wrong_syntax_14():
-    TST_CLIENT.send_cmd('autogui', "test() \\")
-    assert TST_CLIENT.wait_for_data( 'autogui', "Esc char outside strings not allowed: 'test()'.")
+    """Test syntax of autogui commands"""
+    TST_CLIENT.send_cmd("autogui", "test() \\")
+    assert TST_CLIENT.wait_for_data(
+        "autogui", "Esc char outside strings not allowed: 'test()'."
+    )
+
 
 def test_autogui_wrong_syntax_15():
-    TST_CLIENT.send_cmd('autogui', "test(\"\"\")")
-    assert TST_CLIENT.wait_for_data( 'autogui', 'Syntax error. Character " is not allowed here: test("").')
+    """Test syntax of autogui commands"""
+    TST_CLIENT.send_cmd("autogui", 'test(""")')
+    assert TST_CLIENT.wait_for_data(
+        "autogui", 'Syntax error. Character " is not allowed here: test("").'
+    )
+
 
 def test_autogui_wrong_syntax_16():
-    TST_CLIENT.send_cmd('autogui', "test("")")
-    assert TST_CLIENT.wait_for_data( 'autogui', "Unknown command: 'test'")
+    """Test syntax of autogui commands"""
+    TST_CLIENT.send_cmd("autogui", 'test16(" ")')
+    assert TST_CLIENT.wait_for_data("autogui", "Unknown command: 'test16(\" \")'")
+
 
 #
 # Test finsh...
 #
 def test_disconnect_broker():
+    """Finally disconnect from broker"""
     TST_CLIENT.disconnect()
-
-#    mqtt_display_client.ha_discover()
-#    mqtt_display_client.publish_loop()
-#
-#for i in range(5):
-#    time.sleep(1)
