@@ -22,6 +22,10 @@ in  mqtt topics
 
 import uuid
 import json
+import os
+
+#File to store the home assistant discovery uid
+UUID_FILE = ".ha_uuid"
 
 #
 # this file defines everthing whats needed to publish
@@ -41,7 +45,13 @@ class HADiscovery:
         model="MyModel",
     ):
         """Create class default values"""
-        self.uid = "_" + str(hex(uuid.getnode())).replace("0x", "") + "_"
+        if os.path.isfile(UUID_FILE):
+            with open(UUID_FILE, "r", encoding="utf-8") as f:
+                self.uid = str(f.read()).strip()
+        else:
+            self.uid = "_" + str(hex(uuid.getnode())).replace("0x", "") + "_"
+            with open(UUID_FILE, "w", encoding="utf-8") as f:
+                f.write(self.uid)
         self.device_name = device_name
         self.base = base
         self.manufacturer = manufacturer
