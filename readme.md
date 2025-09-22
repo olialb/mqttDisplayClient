@@ -56,6 +56,11 @@ After that chrome is listening on port 9222 for chrome devtools protocol.
 
 ## Installation 
 **Precondition**: [FullPageOS](https://github.com/guysoft/FullPageOS) is installed on your Raspberry PI and up and running.
+
+> **_NOTE:_** Use always the standard user for setting up the mqttDisplayClient otherwise the connection to chrome browser will not work 
+> properly. (Thank you [sthoma123](https://github.com/sthoma123) for [pointing this out](https://github.com/olialb/mqttDisplayClient/issues/8)).
+> In most cases the standard user is user *pi*!
+
 #### Step 1:
 Login with ssh to your kioskdisplay with user *pi*
 #### Step 2:
@@ -289,3 +294,4 @@ The system topic is exposing an json string. *autogui* feature adds the followin
 * `{'mouse_postion': [x,y]}`: current x,y postition of the mouse cursor
 * `{'display_size': [width,hight]}`: wutdth and hight of the used display
   
+
