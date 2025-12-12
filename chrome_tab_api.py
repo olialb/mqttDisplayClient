@@ -112,6 +112,7 @@ class ChromeTabAPI: #pylint: disable=too-many-instance-attributes
         time_tick=1,
         port=9222,
         timeouts=(0, 0),
+        maxTabs=0,
         host="http://localhost:"
     ):
         """Create class default values"""
@@ -119,6 +120,7 @@ class ChromeTabAPI: #pylint: disable=too-many-instance-attributes
         self.port = port
         self.page_timeout = timeouts[0]
         self.reload_timeout = timeouts[1]
+        self.maxTabs = maxTabs
         self.host = host + str(port)
         self.tabs_by_id = {}
         self.tabs_life_counters = {}
@@ -278,6 +280,7 @@ class ChromeTabAPI: #pylint: disable=too-many-instance-attributes
                 # create a new dictionarys
                 tabs_by_id = {}
                 tabs_life_counters = {}
+                count_tabs = 0
                 for tab in tabs:
                     tab = ChromeTab(tab)
                     tabs_by_id[tab.id()] = tab
@@ -316,11 +319,13 @@ class ChromeTabAPI: #pylint: disable=too-many-instance-attributes
         if self.page_timeout > 0:
             # timeout function is active
             tabs_to_be_closed = []
+            tab_counter = 0
             for tab_id, counter in self.tabs_life_counters.items():
                 # do not check lifetime of tab in focus
                 if tab_id != self.focus_tab.id():
+                    tab_counter += 1
                     counter -= self.time_tick
-                    if counter <= 0:
+                    if counter <= 0 or (self.maxTabs != 0 and tab_counter >= self.maxTabs):
                         tab = self.tabs_by_id[tab_id]
                         tabs_to_be_closed.append(tab)
                     else:

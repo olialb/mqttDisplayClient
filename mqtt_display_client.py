@@ -44,6 +44,7 @@ PANEL_DEFAULT = (
 PANEL_SHOW_URL = "URL"  # keyword to set website as panel set over url topic
 PANEL_BLANK_URL = "about:blank"  # URL of the blank web page
 PANEL_BLANK = "BLANK" #show a blank panel
+PANEL_RELOAD = "RELOAD" #reload current panel
 IDLE = ">_"
 LOG_ROTATE_WHEN='midnight'
 LOG_BACKUP_COUNT=5
@@ -108,7 +109,7 @@ class MqttDisplayClient(BMC.BaseMqttClient): # pylint: disable=too-many-instance
         )
         self.current_panel = PANEL_DEFAULT  # Panel which is currently shown
         self.current_panel_published = None  # Panel which was last publised to broker
-        self.reserved_panel_names = [PANEL_DEFAULT, PANEL_SHOW_URL, PANEL_BLANK]
+        self.reserved_panel_names = [PANEL_DEFAULT, PANEL_SHOW_URL, PANEL_BLANK, PANEL_RELOAD]
         self.shell_cmd = IDLE
         self.published_shell_cmd = None
         #chrome api attributes
@@ -138,10 +139,17 @@ class MqttDisplayClient(BMC.BaseMqttClient): # pylint: disable=too-many-instance
         except (KeyError, ValueError):
             self.log.warning("[chrome] section not specified in ini file! Default values used" )
 
+        try:
+            self.chrome_max_tabs = int(config["chrome"]["maxTabs"])
+        except (KeyError, ValueError):
+            self.chrome_max_tabs = 0
+            self.log.warning("maxTabs in [chrome] section not specified. Set to 0." )
+        
         self.chrome_pages = ChromeTabAPI(
             self.publish_delay,
             self.chrome_port,
-            (self.chrome_tab_timeout, self.chrome_reload_timeout)
+            (self.chrome_tab_timeout, self.chrome_reload_timeout),
+            self.chrome_max_tabs
         )
         self.chrome_pages.set_log(self.log_level, self.log_file_handler)
         self.chrome_pages.sync()
@@ -266,7 +274,7 @@ class MqttDisplayClient(BMC.BaseMqttClient): # pylint: disable=too-many-instance
 
     def call_autogui_commands(self, cmds):
         """
-        Starts a thread with is excecutiong autogui commands from a string
+        Starts a thread with is excecuting autogui commands from a string
         parallel to the client.
         """
         if self.autogui_feedback[0 : len("EXEC")] == "EXEC":
@@ -465,7 +473,7 @@ class MqttDisplayClient(BMC.BaseMqttClient): # pylint: disable=too-many-instance
         publish the chrome topic
         """
         #check if chrome topic is enabled
-        if self.chrome_topic is not True:
+        if self.chrome_topic != "true":
             return
         # collect system info
         chrome = {}

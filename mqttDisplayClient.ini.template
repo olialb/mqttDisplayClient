@@ -43,7 +43,7 @@ level=WARNING
 path=log
 #log file name
 file=mqttDisplayClient.log
-#special debug topic can be enabled to see the status of the chrome tabs
+#debug topic can be enabled to see the status of the chrome tabs (true = enabled)
 chromeTopic=false
 
 [feature]
@@ -75,6 +75,8 @@ port=9222
 pageTimeout=600
 #After this timeout in seconds the page in the foreground is reloaded (0 is dispabled). Default 3600.
 reloadTimeout=3600
+#Maximal number of tabs in chrome (0=No Limit).
+maxTabs=5
 
 [panels]
 tagesschau=https://www.tagesschau.de/
