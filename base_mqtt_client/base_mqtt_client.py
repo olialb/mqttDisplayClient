@@ -115,22 +115,22 @@ class BaseMqttClient: #pylint: ...disable=too-many-instance-attributes
             try:
                 os.makedirs(log_file_path)
                 self.log.debug("Logging directory created: ./%s", log_file_path)
-
-                # create time rotating logger for log files
-                self.log_file_handler = logging.handlers.TimedRotatingFileHandler(
-                    os.path.join(log_file_path, log_file_name),
-                    when=log_file_rotate,
-                    backupCount=log_file_backup
-                )
-                # Set the formatter for the logging handler
-                self.log_file_handler.setFormatter(
-                    logging.Formatter("%(asctime)s-%(name)s-%(levelname)s-%(message)s")
-                )
-                self.log.addHandler(self.log_file_handler)
             except FileExistsError:
                 self.log.info("Logging directory exist already: ./%s", log_file_path)
             except OSError:
                 self.log.error("Can not create Logging directory: ./%s", log_file_path)
+    
+            # create time rotating logger for log files
+            self.log_file_handler = logging.handlers.TimedRotatingFileHandler(
+                os.path.join(log_file_path, log_file_name),
+                when=log_file_rotate,
+                backupCount=log_file_backup
+            )
+            # Set the formatter for the logging handler
+            self.log_file_handler.setFormatter(
+                logging.Formatter("%(asctime)s-%(name)s-%(levelname)s-%(message)s")
+            )
+            self.log.addHandler(self.log_file_handler)
 
     def read_config_file(self):
         """
