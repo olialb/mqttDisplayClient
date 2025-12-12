@@ -65,6 +65,11 @@ flags=(
 
 ## Installation 
 **Precondition**: [FullPageOS](https://github.com/guysoft/FullPageOS) is installed on your Raspberry PI and up and running.
+
+> **_NOTE:_** Use always the standard user for setting up the mqttDisplayClient otherwise the connection to chrome browser will not work 
+> properly. (Thank you [sthoma123](https://github.com/sthoma123) for [pointing this out](https://github.com/olialb/mqttDisplayClient/issues/8)).
+> In most cases the standard user is user *pi*!
+
 #### Step 1:
 Login with ssh to your kioskdisplay with user *pi*
 #### Step 2:
@@ -145,7 +150,7 @@ Configuration of the python logger which is used to log events
 * *level*= configuration of the logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL)
 * *path=*" path to the log files
 * *file=*" filename of the log file. If empty, logging in files is disabled
-* *chromeTopc=* With *True* can be a special logging topic be enabled which shows the chrome tabs, which are curently open
+* *chromeTopic=* Set to *true* for enabling a special logging topic which shows the chrome tabs, which are curently active
   
 #### Section **[feature]**
 Section to enable and diable additional features
@@ -181,6 +186,7 @@ This section configures the control of chrome tabs ov the [Chrome DevTools API](
 * *port=* Normally you don't need to adapt this port. See [Chrome preparation](#preparation-of-chrome-in-fullpageos).
 * *pageTimeout=* After this amount of seconds, is a chrome tab closed, when it was not in focus during that time. (0 keeps the tabs open)
 * *reloadTimeout=* After this amount of seconds, is the chrome tab which is in focus, reloaded (0 dispbales reload)
+* *maxTabs=* Maximum tabs which can be opened in parallel in chrome (0 = no limit)
 
 #### Section **[panels]**
 All entries in this section are website shortcuts which you can use to open a webpage in your kioskdisplay with the mptt command topic *url*
